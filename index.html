@@ -133,6 +133,30 @@ sup.fn a{font-size:.78em}
 .fnl div{margin:3px 0}
 .body::after{content:"";display:block;clear:both}
 .up{position:fixed;z-index:9;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-size:1.2rem;cursor:pointer}
+.ib{--ibc:var(--soft);--ibi:var(--fg)}
+.ib[style]{border-color:var(--ibc)}
+.ib[style] .ibh{border-bottom-color:var(--ibc)}
+.ib th{background:var(--ibc);color:var(--ibi)}
+.ib[style] th,.ib[style] td{border-color:var(--ibc)}
+.ibp{margin:0;border-bottom:1px solid var(--line)}
+.ibp img{display:block;width:100%;height:auto}
+.ibp figcaption{padding:6px 10px;text-align:center;font-size:.82rem;color:var(--muted);background:var(--soft)}
+.isub+.isub{border-top:1px solid var(--line);margin-top:6px;padding-top:6px}
+.isep{margin:0 .5em;color:var(--muted)}
+.pic{margin:1em 0;border:2px solid var(--ibc,var(--line));border-radius:6px;overflow:hidden;background:var(--surface)}
+.pr{display:flex;gap:2px;flex-wrap:wrap}
+.pr img{flex:1 1 220px;min-width:0;width:100%;height:auto;max-height:560px;object-fit:cover;display:block}
+.pic figcaption{padding:8px 12px;text-align:center;font-weight:700;background:var(--ibc,var(--soft));color:var(--ibi,var(--fg))}
+.vid{margin:1em 0}
+.vr{display:flex;gap:10px;flex-wrap:wrap}
+.vf{flex:1 1 280px;min-width:0}
+.vf iframe{display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:6px;background:#000}
+.vl{font-size:.8rem;margin:2px 0 0}
+.vid figcaption{text-align:center;font-weight:700;margin-top:6px}
+.body h2,.body h3,.body h4{cursor:pointer}
+.hc{display:inline-block;width:8px;height:8px;border:solid var(--muted);border-width:0 2px 2px 0;transform:rotate(45deg);margin:0 10px 3px 2px}
+.fd .hc{transform:rotate(-45deg);margin-bottom:0}
+.he{float:right;font-size:.78rem;font-weight:500;color:var(--link);text-decoration:none;margin-left:12px}
 </style>
 
 <style>
@@ -227,21 +251,62 @@ function inline(s){
   return s.replace(/\u0000(\d+)\u0000/g,function(m,i){return '<code>'+esc(codes[i])+'</code>'});
 }
 function imgSrc(v){return /^[0-9a-f]{32}$/.test(v)?'/_blob/'+v:esc(v)}
+function isImg(v){return /^(?:[0-9a-f]{32}|https:\/\/\S+)$/.test(v)}
+function unimg(v){var m=v.match(/^\[이미지\s+(\S+?)\]$/);return m?m[1]:v}
+function cellHtml(v){return v.split(/\s+\|\s+/).map(inline).join('<span class="isep">|</span>')}
 function ibHtml(ls){
-  var t='',sub='',img='',rows=[];
+  var t='',sub='',img='',pic='',cap='',color='',rows=[],last=null;
   ls.forEach(function(l){
     var i=l.indexOf('=');
-    if(i<1)return;
+    if(i<0)return;
     var k=l.slice(0,i).trim(),v=l.slice(i+1).trim();
     if(!v)return;
-    if(k==='제목')t=v;
-    else if(k==='부제')sub=v;
-    else if(k==='이미지'){if(/^(?:[0-9a-f]{32}|https:\/\/\S+)$/.test(v))img=v}
-    else rows.push([k,v]);
+    if(k==='제목'){t=v;last=null}
+    else if(k==='부제'){sub=v;last=null}
+    else if(k==='이미지'){v=unimg(v);if(isImg(v))img=v;last=null}
+    else if(k==='사진'){v=unimg(v);if(isImg(v))pic=v;last=null}
+    else if(k==='사진설명'){cap=v;last=null}
+    else if(k==='색'){if(/^#(?:[0-9a-fA-F]{3}){1,2}$/.test(v))color=v;last=null}
+    else if(k===''){if(last)last.vals.push(v)}
+    else if(last&&last.k===k)last.vals.push(v);
+    else{last={k:k,vals:[v]};rows.push(last)}
   });
-  return '<aside class="ib">'
+  var st=color?' style="--ibc:'+color+';--ibi:'+ink(color)+'"':'';
+  return '<aside class="ib"'+st+'>'
     +(t||img?'<div class="ibh">'+(img?'<img src="'+imgSrc(img)+'" alt="">':'')+'<div><b>'+inline(t)+'</b>'+(sub?'<span>'+inline(sub)+'</span>':'')+'</div></div>':'')
-    +'<table>'+rows.map(function(r){return '<tr><th>'+inline(r[0])+'</th><td>'+inline(r[1])+'</td></tr>'}).join('')+'</table></aside>';
+    +(pic?'<figure class="ibp"><img src="'+imgSrc(pic)+'" alt="">'+(cap?'<figcaption>'+inline(cap)+'</figcaption>':'')+'</figure>':'')
+    +'<table>'+rows.map(function(r){
+      return '<tr><th>'+inline(r.k)+'</th><td>'+r.vals.map(function(v){return '<div class="isub">'+cellHtml(v)+'</div>'}).join('')+'</td></tr>';
+    }).join('')+'</table></aside>';
+}
+function picHtml(b){
+  var imgs=[],caps=[];
+  b.lines.forEach(function(l){
+    var t=unimg(l.trim());
+    if(!t)return;
+    if(isImg(t))imgs.push(t);else caps.push(t);
+  });
+  var st=b.color?' style="--ibc:'+b.color+';--ibi:'+ink(b.color)+'"':'';
+  return '<figure class="pic"'+st+'>'
+    +(imgs.length?'<div class="pr">'+imgs.map(function(u){return '<img src="'+imgSrc(u)+'" alt="" loading="lazy">'}).join('')+'</div>':'')
+    +(caps.length?'<figcaption>'+caps.map(function(c){return '<div>'+inline(c)+'</div>'}).join('')+'</figcaption>':'')+'</figure>';
+}
+function ytId(u){
+  var m=u.match(/^https:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:[^#\s]*&)?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/);
+  return m?m[1]:'';
+}
+function vidHtml(b){
+  var ids=[],caps=[];
+  b.lines.forEach(function(l){
+    var t=l.trim();
+    if(!t)return;
+    var id=ytId(t);
+    if(id)ids.push(id);else caps.push(t);
+  });
+  return '<figure class="vid"><div class="vr">'+ids.map(function(id){
+    return '<div class="vf"><iframe src="https://www.youtube-nocookie.com/embed/'+id+'" title="영상" loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>'
+      +'<div class="vl"><a class="ext" href="https://www.youtube.com/watch?v='+id+'" target="_blank" rel="noopener noreferrer">YouTube에서 보기</a></div></div>';
+  }).join('')+'</div>'+(caps.length?'<figcaption>'+caps.map(function(c){return '<div>'+inline(c)+'</div>'}).join('')+'</figcaption>':'')+'</figure>';
 }
 function nameLink(n){return '<a href="#" class="wl" data-t="'+esc(n)+'">'+esc(n)+'</a>'}
 function nameLine(l){
@@ -269,14 +334,16 @@ function render(body){
   FN=[];
   function fp(){if(para.length){out.push('<p>'+para.map(inline).join('<br>')+'</p>');para=[]}}
   function fl(){if(list){out.push('<'+list.t+'>'+list.items.map(function(i){return '<li>'+listItem(i)+'</li>'}).join('')+'</'+list.t+'>');list=null}}
-  function endBox(){out.push(box.kind==='ib'?ibHtml(box.lines):banHtml(box));box=null}
+  function endBox(){out.push(box.kind==='ib'?ibHtml(box.lines):box.kind==='pic'?picHtml(box):box.kind==='vid'?vidHtml(box):banHtml(box));box=null}
   for(var k=0;k<lines.length;k++){
     var line=lines[k];
     if(box){
-      if(/^\s*\[\/(?:정보상자|배너)\]\s*$/.test(line))endBox();else box.lines.push(line);
+      if(/^\s*\[\/(?:정보상자|배너|사진|영상)\]\s*$/.test(line))endBox();else box.lines.push(line);
       continue;
     }
     if(/^\s*\[정보상자\]\s*$/.test(line)){fp();fl();box={kind:'ib',lines:[]};continue}
+    if((m=line.match(/^\s*\[사진(?:\s+(#(?:[0-9a-fA-F]{3}){1,2}))?\s*\]\s*$/))){fp();fl();box={kind:'pic',lines:[],color:m[1]};continue}
+    if(/^\s*\[영상\]\s*$/.test(line)){fp();fl();box={kind:'vid',lines:[]};continue}
     if((m=line.match(/^\s*\[배너(?:\s+([0-9a-f]{32}|https:\/\/[^\s\]]+))?(?:\s+(#(?:[0-9a-fA-F]{3}){1,2}))?\s*\]\s*$/))){fp();fl();box={kind:'ban',lines:[],id:m[1],color:m[2]};continue}
     if((m=line.match(/^\s*\[이미지\s+([0-9a-f]{32}|https:\/\/[^\s\]]+)(?:\s+(.*?))?\]\s*$/))){
       fp();fl();
@@ -294,7 +361,7 @@ function render(body){
       var lv=m[1].length-2;c[lv]++;for(var j=lv+1;j<3;j++)c[j]=0;
       var num=c.slice(0,lv+1).join('.'),id='h'+heads.length;
       heads.push({lv:lv,num:num,text:m[2],id:id});
-      out.push('<h'+(lv+2)+' id="w-'+id+'"><span class="hn">'+num+'.</span> '+inline(m[2])+'</h'+(lv+2)+'>');
+      out.push('<h'+(lv+2)+' id="w-'+id+'"><span class="hc" aria-hidden="true"></span><span class="hn">'+num+'.</span> '+inline(m[2])+'<a href="#" class="he" data-ln="'+k+'">[편집]</a></h'+(lv+2)+'>');
       continue;
     }
     if(/^-{4,}\s*$/.test(line)){fp();fl();out.push('<hr>');continue}
@@ -432,6 +499,8 @@ function editV(v){
     +'<button type="button" class="btn" data-pre="[* " data-post="]" data-ph="각주 내용">각주</button>'
     +'<button type="button" class="btn" data-pre="\n[펼치기 제목]\n" data-post="\n[/펼치기]\n" data-ph="접어 둘 내용">접기</button>'
     +'<button type="button" class="btn" data-pre="\n[배너 #aee57a]\n" data-post="\n[/배너]\n" data-ph="멤버 이름 · 멤버 이름">배너</button>'
+    +'<button type="button" class="btn" data-pre="\n[사진 #8fb28f]\n" data-post="\n[/사진]\n" data-ph="이미지 주소를 한 줄에 하나씩 쓰고 마지막 줄에 설명">사진</button>'
+    +'<button type="button" class="btn" data-pre="\n[영상]\n" data-post="\n[/영상]\n" data-ph="유튜브 주소를 한 줄에 하나씩">영상</button>'
     +'<button type="button" class="btn" data-tpl="info">정보상자</button>'
     +'<button type="button" class="btn" data-tpl="idol">아이돌 틀</button>'
     +'<button type="button" class="btn" data-tpl="person">인물 틀</button>'
@@ -444,7 +513,7 @@ function editV(v){
     +'<div class="row"><button class="btn pri" type="submit" id="sv">저장</button><button class="btn" type="button" data-act="cancel">취소</button></div></form>';
 }
 var TPL={
-person:'[정보상자]\n제목 = 이름\n부제 = 영어 이름\n본명 = 입력\n생년월일 = 입력\n출신지 = 입력\n소속 그룹 = 입력\n포지션 = 입력\n[/정보상자]\n\n[목차]\n\n== 개요 ==\n이름과 소속 그룹을 한두 문장으로 소개해요.\n\n== 프로필 ==\n=== 기본 정보 ===\n=== 포지션과 실력 ===\n\n== 활동 ==\n=== 그룹 활동 ===\n=== 개인 활동 ===\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]\n',
+person:'[정보상자]\n색 = #8fb28f\n제목 = 이름\n부제 = 영어 이름\n사진 = 이미지 주소\n본명 = 입력\n출생 = 2000년 1월 1일\n출생 = 출신지\n신체 = 키 | 혈액형\n가족 = 부모님\n가족 = 반려견 이름\n소속사 = 입력\n소속 그룹 = 입력\n데뷔 = 입력\n[/정보상자]\n\n[목차]\n\n== 개요 ==\n이름과 소속 그룹을 한두 문장으로 소개해요.\n\n== 데뷔 전 ==\n[사진 #8fb28f]\n이미지 주소\n이미지 주소\n▲ 사진 설명\n[/사진]\n* 데뷔 전 이야기를 적어요.\n\n== 포지션 ==\n=== 댄스 ===\n[영상]\n유튜브 주소\n유튜브 주소\n[/영상]\n=== 보컬 ===\n\n== 활동 ==\n=== 그룹 활동 ===\n=== 개인 활동 ===\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]\n',
 info:'[정보상자]\n제목 = 이름\n부제 = 부제\n데뷔일 = 2026년 1월 1일\n장르 = 장르\n소속사 = 소속사 이름\n[/정보상자]\n',
 idol:'[정보상자]\n제목 = 그룹 이름\n부제 = 한글 이름\n데뷔일 = 2026년 1월 1일\n데뷔 음반 = 음반 이름\n장르 = 장르\n소속사 = 소속사 이름\n[/정보상자]\n\n[배너 #aee57a]\n멤버 이름 · 멤버 이름 · 멤버 이름\nDebut Single 음반 이름\n[/배너]\n\n[목차]\n\n== 개요 ==\n그룹을 한두 문장으로 소개해요.[* 출처나 보충 설명은 이렇게 달아요.]\n\n== 멤버 ==\n* 이름: 포지션\n=== 멤버 간 케미 ===\n내용을 적어 주세요.\n\n== 특징 ==\n=== 그룹명 ===\n=== 로고 ===\n=== 콘셉트 ===\n\n== 음반 ==\n* 음반 이름 (발매일)\n\n== 활동 ==\n=== 공연 및 행사 ===\n=== 콘텐츠 ===\n\n== 수상 경력 ==\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]\n'
 };
@@ -460,7 +529,13 @@ function draw(){
   if(v.t==='edit'){
     $('#eb').value=v.draft||'';
     if(v.isNew)$('#et').value=v.title||'';
-    (v.isNew&&!v.title?$('#et'):$('#eb')).focus();
+    if(v.line!=null){
+      var tl2=$('#eb'),ls=(v.draft||'').split('\n'),off=0;
+      for(var q2=0;q2<v.line&&q2<ls.length;q2++)off+=ls[q2].length+1;
+      tl2.focus();
+      tl2.setSelectionRange(off,off+(ls[v.line]||'').length);
+      tl2.scrollTop=Math.max(0,v.line*26-80);
+    }else (v.isNew&&!v.title?$('#et'):$('#eb')).focus();
   }
   $('#bk').hidden=!S.stack.length;
 }
@@ -512,10 +587,30 @@ function onSave(e){
 /* ---------- events ---------- */
 document.addEventListener('click',function(e){
   var t=e.target,el;
+  if((el=t.closest('a.he'))){
+    e.preventDefault();
+    if(S.view.t==='edit')return;
+    var ttl=S.view.t==='doc'?S.view.title:'대문',pg=S.pages.get(ttl);
+    if(pg)go({t:'edit',isNew:false,title:ttl,draft:pg.body,line:Number(el.dataset.ln)});
+    return;
+  }
   if((el=t.closest('a.wl'))){
     e.preventDefault();
     if(S.view.t==='edit')return;
     go({t:'doc',title:el.dataset.t});return;
+  }
+  if((el=t.closest('.body h2,.body h3,.body h4'))&&!t.closest('a')){
+    var lvl=Number(el.tagName.charAt(1)),fold=!el.classList.contains('fd'),hold=null;
+    el.classList.toggle('fd',fold);
+    for(var nx=el.nextElementSibling;nx;nx=nx.nextElementSibling){
+      var isH=/^H[2-4]$/.test(nx.tagName),nl=isH?Number(nx.tagName.charAt(1)):9;
+      if(nx.classList.contains('fnl')||(isH&&nl<=lvl))break;
+      if(fold){nx.hidden=true;continue}
+      if(hold!==null&&!(isH&&nl<=hold)){nx.hidden=true;continue}
+      hold=null;nx.hidden=false;
+      if(isH&&nx.classList.contains('fd'))hold=nl;
+    }
+    return;
   }
   if((el=t.closest('a.tl'))){
     e.preventDefault();
@@ -577,7 +672,7 @@ document.addEventListener('submit',function(e){
 });
 
 /* ---------- boot ---------- */
-var SEED=[{"title": "도움말", "body": "[목차]\n\n== 문서 만들기 ==\n위의 '새 문서' 버튼을 누르거나, 붉은색 링크를 누르면 문서를 만들 수 있어요. 제목은 40자까지 쓸 수 있어요. 아이돌 문서 구성이 필요하면 편집 도구의 '아이돌 틀'을 눌러 보세요. 완성된 모습은 [[예시 아이돌 그룹]]에서 볼 수 있어요.\n\n== 기본 문법 ==\n* 제목: {{{== 제목 ==}}} 처럼 =로 감싸요. =이 많을수록 작은 제목이에요. (2~4개)\n* 굵게: {{{'''굵게'''}}}\n* 기울임: {{{''기울임''}}}\n* 취소선: {{{~~취소선~~}}}\n* 문서 링크: {{{[[감자]]}}} 또는 표시 글자를 바꾸려면 {{{[[감자|고구마 아님]]}}}\n* 바깥 링크: {{{[[https://example.com|사이트 이름]]}}}\n* 목록: 줄 앞에 {{{* }}}\n* 번호 목록: 줄 앞에 {{{1. }}}\n* 인용: 줄 앞에 {{{> }}}\n* 구분선: {{{----}}}\n* 목차 위치 지정: {{{[목차]}}} (제목이 3개 이상이면 자동으로 들어가요)\n* 문법 그대로 보여주기: {{{ 와 }}} 로 감싸요.\n\n== 각주 ==\n본문 중간에 {{{[* 각주 내용]}}} 을 쓰면 번호가 붙고 문서 맨 아래에 각주 목록이 생겨요. 번호를 누르면 서로 오갈 수 있어요.\n\n== 접기 ==\n{{{[펼치기 제목]}}} 과 {{{[/펼치기]}}} 사이의 내용은 접어 둘 수 있어요.\n\n== 정보상자 ==\n문서 오른쪽 위(폰에서는 맨 위)에 표가 나와요. 한 줄에 {{{이름 = 값}}} 형태로 쓰고, '제목'과 '부제'는 상자 윗부분에 크게 나와요.\n\n[펼치기 정보상자 작성 예]\n{{{[정보상자]}}}\n{{{제목 = 그룹 이름}}}\n{{{부제 = 한글 이름}}}\n{{{데뷔일 = 2026년 1월 1일}}}\n{{{소속사 = 소속사 이름}}}\n{{{[/정보상자]}}}\n[/펼치기]\n\n== 배너 ==\n멤버 이름이나 음반 이름을 색 띠로 보여줘요. {{{[배너 #aee57a]}}} 와 {{{[/배너]}}} 사이에 줄마다 한 줄씩 써요. 색은 #과 영문·숫자 3자리 또는 6자리예요.\n\n== 이미지 ==\n편집 도구의 '이미지 올리기'로 사진을 올리면 {{{[이미지 주소]}}} 줄이 들어가요. 사진은 자동으로 줄여서 올라가요. 이 주소는 배너({{{[배너 주소 #색]}}})나 정보상자({{{이미지 = 주소}}})에도 쓸 수 있어요.\n\n== 링크 색 ==\n이미 있는 문서로 가는 링크는 초록색, 아직 없는 문서로 가는 링크는 붉은색이에요. 붉은 링크를 눌러 문서를 채워 넣으면 위키가 자라요.\n\n== 같이 보기 ==\n* [[대문]]\n* [[감자]]", "updatedAt": 1794730000000}, {"title": "대문", "body": "'''감자위키'''에 오신 것을 환영합니다. 누구나 문서를 만들고 고칠 수 있는 공유 위키예요.\n\n== 시작하기 ==\n* 위의 검색창으로 문서를 찾아보세요.\n* 문서 쓰는 방법은 [[도움말]]에서 볼 수 있어요.\n* 처음 읽어볼 문서로 [[감자]]를 추천해요.\n* 아이돌 문서 모양은 [[예시 아이돌 그룹]]에서 볼 수 있어요.\n* 없는 문서는 붉은색 링크로 보여요. 눌러서 바로 만들 수 있어요.\n\n== 문서 목록 ==\n'새 문서' 버튼으로 만든 문서는 '최근 변경'에 가장 먼저 나타나요.", "updatedAt": 1794729600000}, {"title": "바다", "body": "[정보상자]\n제목 = 바다\n부제 = 영어 이름\n본명 = 입력\n생년월일 = 입력\n출신지 = 입력\n소속 그룹 = 입력\n포지션 = 입력\n[/정보상자]\n\n[목차]\n\n== 개요 ==\n이름과 소속 그룹을 한두 문장으로 소개해요.\n\n== 프로필 ==\n=== 기본 정보 ===\n=== 포지션과 실력 ===\n\n== 활동 ==\n=== 그룹 활동 ===\n=== 개인 활동 ===\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]", "updatedAt": 1794731000000}, {"title": "감자", "body": "'''감자'''는 가지과 식물로, 땅속줄기 끝이 부풀어 생긴 덩이줄기를 먹는 작물이에요. 원산지는 남아메리카 안데스 산지로 알려져 있고, 이후 여러 나라로 퍼져 주요 식량 작물이 되었어요.\n\n== 종류 ==\n* 러셋: 갈색 껍질에 길쭉한 모양이라 굽거나 튀기는 요리에 많이 써요.\n* 유콘 골드: 속살이 노랗고 맛이 고소해요.\n* 보라 감자: 껍질과 속살이 보랏빛을 띠어요.\n\n== 보관과 주의 ==\n햇빛이 들지 않는 서늘한 곳에 보관해요. 싹이 났거나 껍질이 초록색으로 변한 부분에는 솔라닌이 들어 있으니 도려내고, 많이 변했다면 먹지 않는 게 좋아요.\n\n== 같이 보기 ==\n* [[감자 요리]]\n* [[대문]]", "updatedAt": 1794729600000}, {"title": "예시 아이돌 그룹", "body": "[정보상자]\n제목 = Lumion\n부제 = 틀을 보여주기 위한 가상의 그룹\n데뷔일 = 2026년 1월 1일\n데뷔 음반 = 첫 번째 싱글\n장르 = 팝[* 이 문서의 내용은 모두 틀을 보여주려고 지어낸 예시예요. 실제 그룹이 아니에요.]\n소속사 = 예시엔터테인먼트\n[/정보상자]\n\n[배너 #aee57a]\n희원 · 조서연 · 바다  · 연우  · 이서연  · 지호\nDebut Single 예시\n[/배너]\n\n[목차]\n\n== 개요 ==\n'''예시 그룹'''은 위키 문서 틀을 보여주기 위해 만든 가상의 그룹이에요. 새 문서를 만들 때 편집 도구의 '아이돌 틀' 버튼을 누르면 이 문서와 같은 구성을 불러올 수 있어요.\n\n== 멤버 ==\n* 멤버1: 리더, 보컬\n* 멤버2: 댄스\n* 멤버3: 비주얼\n=== 멤버 간 케미 ===\n멤버끼리 잘 맞는 점을 적는 칸이에요.\n=== 멤버 간 이야기 ===\n연습생 시절 이야기 같은 내용을 적어요.\n\n== 특징 ==\n=== 그룹명 ===\n이름의 뜻을 적어요.\n=== 로고 ===\n로고 이미지는 '이미지 올리기' 버튼으로 넣을 수 있어요.\n=== 콘셉트 ===\n활동 콘셉트를 적어요.\n\n== 음반 ==\n* 첫 번째 싱글 (2026년 1월 1일)\n\n== 활동 ==\n=== 공연 및 행사 ===\n=== 음악 방송 직캠 ===\n\n== 수상 경력 ==\n아직 없어요.\n\n== 여담 ==\n[펼치기 접어 둔 내용 보기]\n접기 문법으로 긴 내용을 숨길 수 있어요.\n[/펼치기]\n\n== 둘러보기 ==\n* [[대문]]\n* [[도움말]]", "updatedAt": 1794730754356}, {"title": "희원", "body": "[정보상자]\n제목 = 희원\n부제 = 영어 이름\n본명 = 입력\n생년월일 = 입력\n출신지 = 입력\n소속 그룹 = 입력\n포지션 = 입력\n[/정보상자]\n\n[목차]\n\n== 개요 ==\n이름과 소속 그룹을 한두 문장으로 소개해요.\n\n== 프로필 ==\n=== 기본 정보 ===\n=== 포지션과 실력 ===\n\n== 활동 ==\n=== 그룹 활동 ===\n=== 개인 활동 ===\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]", "updatedAt": 1794731000000}];
+var SEED=[{"title": "도움말", "body": "[목차]\n\n== 문서 만들기 ==\n위의 '새 문서' 버튼을 누르거나, 붉은색 링크를 누르면 문서를 만들 수 있어요. 제목은 40자까지 쓸 수 있어요. 아이돌 문서 구성이 필요하면 편집 도구의 '아이돌 틀'을 눌러 보세요. 완성된 모습은 [[예시 아이돌 그룹]]에서 볼 수 있어요.\n\n== 기본 문법 ==\n* 제목: {{{== 제목 ==}}} 처럼 =로 감싸요. =이 많을수록 작은 제목이에요. (2~4개)\n* 굵게: {{{'''굵게'''}}}\n* 기울임: {{{''기울임''}}}\n* 취소선: {{{~~취소선~~}}}\n* 문서 링크: {{{[[감자]]}}} 또는 표시 글자를 바꾸려면 {{{[[감자|고구마 아님]]}}}\n* 바깥 링크: {{{[[https://example.com|사이트 이름]]}}}\n* 목록: 줄 앞에 {{{* }}}\n* 번호 목록: 줄 앞에 {{{1. }}}\n* 인용: 줄 앞에 {{{> }}}\n* 구분선: {{{----}}}\n* 목차 위치 지정: {{{[목차]}}} (제목이 3개 이상이면 자동으로 들어가요)\n* 문법 그대로 보여주기: {{{ 와 }}} 로 감싸요.\n\n== 각주 ==\n본문 중간에 {{{[* 각주 내용]}}} 을 쓰면 번호가 붙고 문서 맨 아래에 각주 목록이 생겨요. 번호를 누르면 서로 오갈 수 있어요.\n\n== 접기 ==\n{{{[펼치기 제목]}}} 과 {{{[/펼치기]}}} 사이의 내용은 접어 둘 수 있어요.\n\n== 정보상자 ==\n문서 오른쪽 위(폰에서는 맨 위)에 표가 나와요. 한 줄에 {{{이름 = 값}}} 형태로 쓰고, '제목'과 '부제'는 상자 윗부분에 크게 나와요.\n\n[펼치기 정보상자 작성 예]\n{{{[정보상자]}}}\n{{{제목 = 그룹 이름}}}\n{{{부제 = 한글 이름}}}\n{{{데뷔일 = 2026년 1월 1일}}}\n{{{소속사 = 소속사 이름}}}\n{{{[/정보상자]}}}\n[/펼치기]\n\n== 배너 ==\n멤버 이름이나 음반 이름을 색 띠로 보여줘요. {{{[배너 #aee57a]}}} 와 {{{[/배너]}}} 사이에 줄마다 한 줄씩 써요. 색은 #과 영문·숫자 3자리 또는 6자리예요.\n\n== 이미지 ==\n편집 도구의 '이미지 올리기'로 사진을 올리면 {{{[이미지 주소]}}} 줄이 들어가요. 사진은 자동으로 줄여서 올라가요. 이 주소는 배너({{{[배너 주소 #색]}}})나 정보상자({{{이미지 = 주소}}})에도 쓸 수 있어요.\n\n== 정보상자 칸 여러 개 ==\n같은 이름을 연달아 쓰면 한 칸 안에 나뉘어 들어가요. 예를 들어 {{{가족 = 부모님}}} 다음 줄에 {{{가족 = 반려견 이름}}}을 쓰면 가족 칸이 둘로 나뉘어요. 값 사이에 {{{ | }}}를 쓰면 구분선이 들어가요. {{{색 = #8fb28f}}}로 상자 색을, {{{사진 = 주소}}}로 큰 사진을 넣어요.\n\n== 사진과 영상 ==\n{{{[사진 #8fb28f]}}} 와 {{{[/사진]}}} 사이에 이미지 주소를 한 줄에 하나씩 쓰면 나란히 보이고, 그 밖의 줄은 아래 설명이 돼요. {{{[영상]}}} 과 {{{[/영상]}}} 사이에 유튜브 주소를 쓰면 영상이 나란히 나와요. 원하는 위치에 쓰면 그 자리에 들어가요.\n\n== 문단 접기와 편집 ==\n문단 제목을 누르면 그 문단이 접히고 펴져요. 제목 오른쪽의 [편집]을 누르면 그 문단으로 바로 가요.\n\n== 링크 색 ==\n이미 있는 문서로 가는 링크는 초록색, 아직 없는 문서로 가는 링크는 붉은색이에요. 붉은 링크를 눌러 문서를 채워 넣으면 위키가 자라요.\n\n== 같이 보기 ==\n* [[대문]]\n* [[감자]]", "updatedAt": 1794730000000}, {"title": "대문", "body": "'''감자위키'''에 오신 것을 환영합니다. 누구나 문서를 만들고 고칠 수 있는 공유 위키예요.\n\n== 시작하기 ==\n* 위의 검색창으로 문서를 찾아보세요.\n* 문서 쓰는 방법은 [[도움말]]에서 볼 수 있어요.\n* 처음 읽어볼 문서로 [[감자]]를 추천해요.\n* 아이돌 문서 모양은 [[예시 아이돌 그룹]]에서 볼 수 있어요.\n* 없는 문서는 붉은색 링크로 보여요. 눌러서 바로 만들 수 있어요.\n\n== 문서 목록 ==\n'새 문서' 버튼으로 만든 문서는 '최근 변경'에 가장 먼저 나타나요.", "updatedAt": 1794729600000}, {"title": "바다", "body": "[정보상자]\n제목 = 바다\n부제 = 영어 이름\n본명 = 입력\n생년월일 = 입력\n출신지 = 입력\n소속 그룹 = 입력\n포지션 = 입력\n[/정보상자]\n\n[목차]\n\n== 개요 ==\n이름과 소속 그룹을 한두 문장으로 소개해요.\n\n== 프로필 ==\n=== 기본 정보 ===\n=== 포지션과 실력 ===\n\n== 활동 ==\n=== 그룹 활동 ===\n=== 개인 활동 ===\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]", "updatedAt": 1794731000000}, {"title": "감자", "body": "'''감자'''는 가지과 식물로, 땅속줄기 끝이 부풀어 생긴 덩이줄기를 먹는 작물이에요. 원산지는 남아메리카 안데스 산지로 알려져 있고, 이후 여러 나라로 퍼져 주요 식량 작물이 되었어요.\n\n== 종류 ==\n* 러셋: 갈색 껍질에 길쭉한 모양이라 굽거나 튀기는 요리에 많이 써요.\n* 유콘 골드: 속살이 노랗고 맛이 고소해요.\n* 보라 감자: 껍질과 속살이 보랏빛을 띠어요.\n\n== 보관과 주의 ==\n햇빛이 들지 않는 서늘한 곳에 보관해요. 싹이 났거나 껍질이 초록색으로 변한 부분에는 솔라닌이 들어 있으니 도려내고, 많이 변했다면 먹지 않는 게 좋아요.\n\n== 같이 보기 ==\n* [[감자 요리]]\n* [[대문]]", "updatedAt": 1794729600000}, {"title": "예시 아이돌 그룹", "body": "[정보상자]\n제목 = Lumion\n부제 = 틀을 보여주기 위한 가상의 그룹\n데뷔일 = 2026년 1월 1일\n데뷔 음반 = 첫 번째 싱글\n장르 = 팝[* 이 문서의 내용은 모두 틀을 보여주려고 지어낸 예시예요. 실제 그룹이 아니에요.]\n소속사 = 예시엔터테인먼트\n[/정보상자]\n\n[배너 #aee57a]\n희원 · 조서연 · 바다  · 연우  · 이서연  · 지호\nDebut Single 예시\n[/배너]\n\n[목차]\n\n== 개요 ==\n'''예시 그룹'''은 위키 문서 틀을 보여주기 위해 만든 가상의 그룹이에요. 새 문서를 만들 때 편집 도구의 '아이돌 틀' 버튼을 누르면 이 문서와 같은 구성을 불러올 수 있어요.\n\n== 멤버 ==\n* 멤버1: 리더, 보컬\n* 멤버2: 댄스\n* 멤버3: 비주얼\n=== 멤버 간 케미 ===\n멤버끼리 잘 맞는 점을 적는 칸이에요.\n=== 멤버 간 이야기 ===\n연습생 시절 이야기 같은 내용을 적어요.\n\n== 특징 ==\n=== 그룹명 ===\n이름의 뜻을 적어요.\n=== 로고 ===\n로고 이미지는 '이미지 올리기' 버튼으로 넣을 수 있어요.\n=== 콘셉트 ===\n활동 콘셉트를 적어요.\n\n== 음반 ==\n* 첫 번째 싱글 (2026년 1월 1일)\n\n== 활동 ==\n=== 공연 및 행사 ===\n=== 음악 방송 직캠 ===\n\n== 수상 경력 ==\n아직 없어요.\n\n== 여담 ==\n[펼치기 접어 둔 내용 보기]\n접기 문법으로 긴 내용을 숨길 수 있어요.\n[/펼치기]\n\n== 둘러보기 ==\n* [[대문]]\n* [[도움말]]", "updatedAt": 1794730754356}, {"title": "희원", "body": "[정보상자]\n제목 = 희원\n부제 = 영어 이름\n본명 = 입력\n생년월일 = 입력\n출신지 = 입력\n소속 그룹 = 입력\n포지션 = 입력\n[/정보상자]\n\n[목차]\n\n== 개요 ==\n이름과 소속 그룹을 한두 문장으로 소개해요.\n\n== 프로필 ==\n=== 기본 정보 ===\n=== 포지션과 실력 ===\n\n== 활동 ==\n=== 그룹 활동 ===\n=== 개인 활동 ===\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]", "updatedAt": 1794731000000}];
 draw();
 window.addEventListener('scroll',function(){var u=$('#up');if(u)u.hidden=window.scrollY<400},{passive:true});
 function fromRow(r){return {title:r.title,body:String(r.body||''),updatedAt:Number(r.updated_at)||0}}
