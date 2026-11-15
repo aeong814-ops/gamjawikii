@@ -252,7 +252,7 @@ function inline(s){
 }
 function imgSrc(v){return /^[0-9a-f]{32}$/.test(v)?'/_blob/'+v:esc(v)}
 function isImg(v){return /^(?:[0-9a-f]{32}|https:\/\/\S+)$/.test(v)}
-function unimg(v){var m=v.match(/^\[이미지\s+(\S+?)\]$/);return m?m[1]:v}
+function unimg(v){var m=v.match(/^\[(?:이미지\s+)?(\S+?)\]$/);return m?m[1]:v}
 function cellHtml(v){return v.split(/\s+\|\s+/).map(inline).join('<span class="isep">|</span>')}
 function ibHtml(ls){
   var t='',sub='',img='',pic='',cap='',color='',rows=[],last=null;
@@ -323,9 +323,16 @@ function listItem(t){
   return inline(t);
 }
 function banHtml(b){
-  var ls=b.lines.filter(function(l){return l.trim()});
+  var bid=b.id;
+  var ls=b.lines.filter(function(l){
+    var t=l.trim();
+    if(!t)return false;
+    var m=t.match(/^\[?(?:이미지\s+)?([0-9a-f]{32}|https:\/\/[^\s\]]+)\]?$/);
+    if(m){if(!bid)bid=m[1];return false}
+    return true;
+  });
   var st=b.color?' style="background:'+b.color+';color:'+ink(b.color)+'"':'';
-  return '<figure class="ban">'+(b.id?'<img src="'+imgSrc(b.id)+'" alt="">':'')
+  return '<figure class="ban">'+(bid?'<img src="'+imgSrc(bid)+'" alt="">':'')
     +(ls.length?'<figcaption'+st+'>'+ls.map(function(l){return '<div>'+nameLine(l)+'</div>'}).join('')+'</figcaption>':'')+'</figure>';
 }
 function render(body){
