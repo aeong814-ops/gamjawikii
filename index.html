@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>감자위키</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: sticky russet header over a single reading column; article cards, red/green wiki links. */
+:root{
+  --bg:#f4f2ef; --surface:#ffffff; --soft:#f0ece6; --fg:#2b2521; --muted:#766b61; --line:#e2dbd2;
+  --head:#5a3c2a; --head-fg:#fbf4ea; --accent:#d9a521; --link:#0a6cc2; --missing:#b3402c; --mark:#fbe6a2;
+  --font-body:"Noto Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --font-display:"Noto Sans KR",system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1a1613; --surface:#241f1b; --soft:#2d2722; --fg:#efe8df; --muted:#a39689; --line:#3b332c;
+    --head:#33231a; --head-fg:#fbf4ea; --accent:#e6b43a; --link:#6cb2f5; --missing:#ee8a75; --mark:#5b4812;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1a1613; --surface:#241f1b; --soft:#2d2722; --fg:#efe8df; --muted:#a39689; --line:#3b332c;
+  --head:#33231a; --head-fg:#fbf4ea; --accent:#e6b43a; --link:#6cb2f5; --missing:#ee8a75; --mark:#5b4812;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.75 var(--font-body);word-break:keep-all;overflow-wrap:anywhere}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--head);z-index:20}
+.in{max-width:880px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--head);color:var(--head-fg)}
+.top .in{padding-block:10px;display:grid;gap:8px}
+.bar{display:flex;gap:10px;align-items:center}
+.logo{display:flex;align-items:center;gap:8px;background:none;border:0;color:inherit;font:700 1.3rem/1 var(--font-display);letter-spacing:-.02em;padding:2px 0;cursor:pointer;white-space:nowrap}
+.logo svg{display:block}
+.logo .sp{fill:var(--accent)} .logo .ey{fill:var(--head)}
+#sf{flex:1;min-width:0;display:flex;gap:6px}
+#q{flex:1;min-width:0;height:36px;border:1px solid transparent;border-radius:6px;padding:0 12px;font:inherit;background:rgba(255,255,255,.14);color:var(--head-fg)}
+#q::placeholder{color:rgba(251,244,234,.7)}
+#q:focus{background:var(--surface);color:var(--fg);outline:2px solid var(--accent);outline-offset:0}
+.sb{height:36px;border:0;border-radius:6px;padding:0 14px;font:500 .9rem var(--font-body);background:var(--accent);color:#2b1f12;cursor:pointer}
+.nav{display:flex;flex-wrap:wrap;gap:2px 4px}
+.nav button{background:none;border:0;color:var(--head-fg);font:500 .88rem var(--font-body);padding:4px 10px;border-radius:5px;cursor:pointer;opacity:.9}
+.nav button:hover{background:rgba(255,255,255,.12);opacity:1}
+button:focus-visible,a:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:16px 40px;display:grid;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px 18px 20px;min-width:0}
+.card h1{font:700 1.65rem/1.35 var(--font-display);letter-spacing:-.015em;margin:0;text-wrap:balance}
+.card h2.sec{font-size:1rem;margin:0 0 8px}
+.dh{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.meta{color:var(--muted);font-size:.82rem;margin:4px 0 14px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:6px;padding:6px 12px;font:500 .88rem var(--font-body);cursor:pointer}
+.btn:hover{background:var(--soft)}
+.btn.pri{background:var(--head);border-color:var(--head);color:var(--head-fg)}
+.btn.pri:hover{filter:brightness(1.12)}
+.btn:disabled{opacity:.55;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+a.wl,a.ext{color:var(--link);text-decoration:none}
+a.wl:hover,a.ext:hover{text-decoration:underline}
+a.wl.new{color:var(--missing)}
+a.ext::after{content:"\2197";font-size:.75em;margin-left:1px}
+.body h2,.body h3,.body h4{line-height:1.4;margin:1.5em 0 .6em;scroll-margin-top:110px}
+.body h2{font-size:1.3rem;border-bottom:1px solid var(--line);padding-bottom:4px}
+.body h3{font-size:1.12rem}
+.body h4{font-size:1rem}
+.hn{color:var(--link);margin-right:2px}
+.body p{margin:.6em 0}
+.body ul,.body ol{margin:.5em 0;padding-left:1.4em}
+.body blockquote{margin:.6em 0;padding:6px 14px;border-left:3px solid var(--accent);background:var(--soft);border-radius:0 6px 6px 0}
+.body blockquote+blockquote{margin-top:-.3em}
+.body hr{border:0;border-top:1px solid var(--line);margin:1.2em 0}
+code{font:.88em var(--font-mono);background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:1px 5px;word-break:break-all}
+.toc{display:inline-block;min-width:min(260px,100%);max-width:100%;border:1px solid var(--line);background:var(--soft);border-radius:6px;padding:10px 14px;margin:.6em 0 .4em}
+.toc b{display:block;margin-bottom:4px;font-size:.9rem}
+.ti{font-size:.9rem;line-height:1.8}
+.ti.l1{padding-left:1em}.ti.l2{padding-left:2em}
+.ti a{color:var(--fg);text-decoration:none}
+.ti a:hover{color:var(--link);text-decoration:underline}
+ul.list{list-style:none;margin:0;padding:0}
+ul.list li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line)}
+ul.list li:first-child{border-top:0}
+ul.list li span{color:var(--muted);font-size:.8rem;white-space:nowrap;padding-top:2px}
+.res{padding:10px 0;border-top:1px solid var(--line)}
+.res:first-of-type{border-top:0}
+.res a{font-weight:500}
+.res p{margin:2px 0 0;color:var(--muted);font-size:.86rem}
+mark{background:var(--mark);color:inherit;border-radius:2px;padding:0 1px}
+.banner{border:1px solid var(--accent);background:var(--soft);border-radius:8px;padding:9px 14px;font-size:.86rem}
+.empty p{margin:.6em 0;color:var(--muted)}
+.edit label{display:block;font-size:.85rem;font-weight:500;margin:14px 0 4px}
+.edit input[type=text]{width:100%;height:40px;border:1px solid var(--line);border-radius:6px;padding:0 12px;font:inherit;background:var(--bg);color:var(--fg)}
+.edit textarea{width:100%;min-height:340px;border:1px solid var(--line);border-radius:6px;padding:12px;font:.92rem/1.7 var(--font-mono);background:var(--bg);color:var(--fg);resize:vertical;tab-size:2}
+.tabs{display:flex;gap:4px;margin:14px 0 8px}
+.tabs button{border:0;border-bottom:2px solid transparent;background:none;color:var(--muted);font:500 .9rem var(--font-body);padding:6px 12px;cursor:pointer}
+.tabs button.on{color:var(--fg);border-bottom-color:var(--accent)}
+.tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.tools .btn{padding:4px 10px;font-size:.82rem}
+.pv{min-height:200px;border:1px dashed var(--line);border-radius:6px;padding:4px 14px 14px}
+.err{color:var(--missing);font-size:.88rem;margin:10px 0 0}
+.hint{color:var(--muted);font-size:.8rem;margin:6px 0 0}
+details.toc{display:inline-block;min-width:min(250px,100%);max-width:100%;border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:10px 16px 12px;margin:.4em 0 1em;vertical-align:top}
+.toc summary{cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:24px;list-style:none;font-size:1.05rem;padding:2px 0 6px}
+.toc summary::-webkit-details-marker{display:none}
+.toc summary::after{content:"";width:8px;height:8px;border:solid var(--muted);border-width:0 2px 2px 0;transform:rotate(45deg);margin-top:-3px}
+.toc[open] summary::after{transform:rotate(225deg);margin-top:4px}
+.toc .ti a{color:var(--link)}
+.ib{float:right;width:min(100%,370px);margin:0 0 14px 18px;border:2px solid var(--fg);background:var(--surface);font-size:.9rem;line-height:1.5}
+.ibh{display:flex;gap:12px;align-items:center;justify-content:center;padding:10px 12px;border-bottom:1px solid var(--fg)}
+.ibh img{max-height:56px;max-width:45%;object-fit:contain}
+.ibh b{display:block;font-size:1.15rem;line-height:1.3}
+.ibh span{color:var(--muted);font-size:.88rem}
+.ib table{width:100%;border-collapse:collapse}
+.ib th{width:30%;background:var(--soft);font-weight:700;text-align:center;padding:8px 6px;border-right:1px solid var(--line);border-top:1px solid var(--line);vertical-align:middle}
+.ib td{padding:8px 12px;border-top:1px solid var(--line);min-width:0}
+.ib tr:first-child th,.ib tr:first-child td{border-top:0}
+@media (max-width:620px){.ib{float:none;width:100%;margin:0 0 14px}}
+.ban{margin:0 0 16px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.ban img{display:block;width:100%;height:auto;max-height:520px;object-fit:cover}
+.ban figcaption{padding:12px 14px;text-align:center;font-weight:700;line-height:1.7;background:var(--soft)}
+.img{margin:1em 0;text-align:center}
+.img img{max-width:100%;height:auto;border-radius:6px}
+.img figcaption{color:var(--muted);font-size:.84rem;margin-top:4px}
+.fold{border:1px solid var(--line);border-radius:6px;margin:.7em 0;overflow:hidden}
+.fold summary{cursor:pointer;padding:8px 14px;font-weight:500;background:var(--soft)}
+.fold .fc{padding:4px 14px 10px}
+sup.fn{line-height:0}
+sup.fn a,a.fq{color:var(--link);text-decoration:none}
+sup.fn a{font-size:.78em}
+.fnl{clear:both;margin-top:1.8em;padding-top:10px;border-top:1px solid var(--line);font-size:.86rem;color:var(--muted)}
+.fnl div{margin:3px 0}
+.body::after{content:"";display:block;clear:both}
+.up{position:fixed;z-index:9;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-size:1.2rem;cursor:pointer}
+</style>
+
+<style>
+html{color-scheme:light}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="in">
+    <div class="bar">
+      <button class="logo" data-go="home" aria-label="감자위키 대문">
+        <svg width="36" height="28" viewBox="0 0 40 32" aria-hidden="true"><path class="sp" d="M7 18C5 10 12 3 22 4c9 1 15 6 13 14-2 8-9 13-18 11C11 28 8 23 7 18z"/><circle class="ey" cx="15" cy="14" r="1.5"/><circle class="ey" cx="25" cy="19" r="1.5"/><circle class="ey" cx="26" cy="10.5" r="1.3"/></svg>
+        <span>감자위키</span>
+      </button>
+      <form id="sf" role="search">
+        <input id="q" type="search" placeholder="문서 검색" autocomplete="off" enterkeyhint="search" aria-label="문서 검색">
+        <button class="sb" type="submit">검색</button>
+      </form>
+    </div>
+    <nav class="nav" aria-label="바로가기">
+      <button type="button" id="bk" data-go="back" hidden>뒤로</button>
+      <button type="button" data-go="home">대문</button>
+      <button type="button" data-go="recent">최근 변경</button>
+      <button type="button" data-go="random">임의 문서</button>
+      <button type="button" data-go="new">새 문서</button>
+    </nav>
+  </div>
+</header>
+<div class="in"><main id="app"></main></div>
+<button id="up" class="up" data-top hidden aria-label="맨 위로">&#8593;</button>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* ===== Supabase 설정: 아래 두 값만 채우면 돼요 (Project Settings > API) ===== */
+var SUPABASE_URL='https://hpyblikjkglcqwwtvqhg.supabase.co';
+var SUPABASE_KEY='sb_publishable_QRNbyII000Fi7k0C6SE8qw_phUy7XTe';
+/* ================================================================== */
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var app=$('#app');
+var S={pages:new Map(),ready:false,slow:false,err:'',local:false,col:null,view:{t:'home'},stack:[]};
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function unesc(s){return s.replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&')}
+function norm(t){return String(t).replace(/\s+/g,' ').trim()}
+function reEsc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
+function idOf(t){var b=new TextEncoder().encode(t),s='';b.forEach(function(x){s+=String.fromCharCode(x)});return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function has(t){return S.pages.has(norm(unesc(t)))}
+function rel(t){
+  if(!t)return '기록 없음';
+  var d=(Date.now()-t)/1000;
+  if(d<60)return '방금 전';
+  if(d<3600)return Math.floor(d/60)+'분 전';
+  if(d<86400)return Math.floor(d/3600)+'시간 전';
+  if(d<604800)return Math.floor(d/86400)+'일 전';
+  var x=new Date(t);
+  return x.getFullYear()+'.'+String(x.getMonth()+1).padStart(2,'0')+'.'+String(x.getDate()).padStart(2,'0')+'.';
+}
+
+/* ---------- markup ---------- */
+var FN=null;
+function ink(hex){
+  var h=hex.slice(1);
+  if(h.length===3)h=h.replace(/./g,'$&$&');
+  var n=parseInt(h,16),r=n>>16,g=(n>>8)&255,b=n&255;
+  return (0.299*r+0.587*g+0.114*b)>150?'#1d1a17':'#ffffff';
+}
+function inline(s){
+  var codes=[];
+  s=s.replace(/\{\{\{(.+?)\}\}\}/g,function(m,c){codes.push(c);return '\u0000'+(codes.length-1)+'\u0000'});
+  s=s.replace(/\[\*\s*((?:\[\[[^\]]*\]\]|[^\]])+)\]/g,function(m,c){
+    if(!FN)return m;
+    FN.push(c.trim());
+    return '\u0001'+FN.length+'\u0001';
+  });
+  s=esc(s);
+  s=s.replace(/'''(.+?)'''/g,'<b>$1</b>').replace(/''(.+?)''/g,'<i>$1</i>').replace(/~~(.+?)~~/g,'<s>$1</s>');
+  s=s.replace(/\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]/g,function(m,t,l){
+    t=t.trim();
+    if(/^https?:\/\//i.test(t))return '<a class="ext" href="'+t+'" target="_blank" rel="noopener noreferrer">'+(l||t)+'</a>';
+    var n=norm(unesc(t));
+    return '<a href="#" class="wl'+(has(t)?'':' new')+'" data-t="'+esc(n)+'">'+(l||esc(n))+'</a>';
+  });
+  s=s.replace(/\u0001(\d+)\u0001/g,function(m,n){
+    return '<sup class="fn"><a href="#" class="fa" id="r-'+n+'" data-f="'+n+'">['+n+']</a></sup>';
+  });
+  return s.replace(/\u0000(\d+)\u0000/g,function(m,i){return '<code>'+esc(codes[i])+'</code>'});
+}
+function imgSrc(v){return /^[0-9a-f]{32}$/.test(v)?'/_blob/'+v:esc(v)}
+function ibHtml(ls){
+  var t='',sub='',img='',rows=[];
+  ls.forEach(function(l){
+    var i=l.indexOf('=');
+    if(i<1)return;
+    var k=l.slice(0,i).trim(),v=l.slice(i+1).trim();
+    if(!v)return;
+    if(k==='제목')t=v;
+    else if(k==='부제')sub=v;
+    else if(k==='이미지'){if(/^(?:[0-9a-f]{32}|https:\/\/\S+)$/.test(v))img=v}
+    else rows.push([k,v]);
+  });
+  return '<aside class="ib">'
+    +(t||img?'<div class="ibh">'+(img?'<img src="'+imgSrc(img)+'" alt="">':'')+'<div><b>'+inline(t)+'</b>'+(sub?'<span>'+inline(sub)+'</span>':'')+'</div></div>':'')
+    +'<table>'+rows.map(function(r){return '<tr><th>'+inline(r[0])+'</th><td>'+inline(r[1])+'</td></tr>'}).join('')+'</table></aside>';
+}
+function nameLink(n){return '<a href="#" class="wl" data-t="'+esc(n)+'">'+esc(n)+'</a>'}
+function nameLine(l){
+  return l.split(/(\s*[·•,]\s*)/).map(function(p,i){
+    if(i%2)return esc(p);
+    var n=norm(p);
+    return n&&S.pages.has(n)?nameLink(n):inline(p);
+  }).join('');
+}
+function listItem(t){
+  var m=t.match(/^([^:\[\]*']+?)\s*:\s*(.*)$/);
+  if(m){var n=norm(m[1]);if(S.pages.has(n))return nameLink(n)+': '+inline(m[2])}
+  else{var o=norm(t);if(S.pages.has(o))return nameLink(o)}
+  return inline(t);
+}
+function banHtml(b){
+  var ls=b.lines.filter(function(l){return l.trim()});
+  var st=b.color?' style="background:'+b.color+';color:'+ink(b.color)+'"':'';
+  return '<figure class="ban">'+(b.id?'<img src="'+imgSrc(b.id)+'" alt="">':'')
+    +(ls.length?'<figcaption'+st+'>'+ls.map(function(l){return '<div>'+nameLine(l)+'</div>'}).join('')+'</figcaption>':'')+'</figure>';
+}
+function render(body){
+  var lines=String(body).replace(/\r/g,'').split('\n');
+  var out=[],heads=[],para=[],list=null,tocAt=-1,c=[0,0,0],m,folds=0,box=null;
+  FN=[];
+  function fp(){if(para.length){out.push('<p>'+para.map(inline).join('<br>')+'</p>');para=[]}}
+  function fl(){if(list){out.push('<'+list.t+'>'+list.items.map(function(i){return '<li>'+listItem(i)+'</li>'}).join('')+'</'+list.t+'>');list=null}}
+  function endBox(){out.push(box.kind==='ib'?ibHtml(box.lines):banHtml(box));box=null}
+  for(var k=0;k<lines.length;k++){
+    var line=lines[k];
+    if(box){
+      if(/^\s*\[\/(?:정보상자|배너)\]\s*$/.test(line))endBox();else box.lines.push(line);
+      continue;
+    }
+    if(/^\s*\[정보상자\]\s*$/.test(line)){fp();fl();box={kind:'ib',lines:[]};continue}
+    if((m=line.match(/^\s*\[배너(?:\s+([0-9a-f]{32}|https:\/\/[^\s\]]+))?(?:\s+(#(?:[0-9a-fA-F]{3}){1,2}))?\s*\]\s*$/))){fp();fl();box={kind:'ban',lines:[],id:m[1],color:m[2]};continue}
+    if((m=line.match(/^\s*\[이미지\s+([0-9a-f]{32}|https:\/\/[^\s\]]+)(?:\s+(.*?))?\]\s*$/))){
+      fp();fl();
+      out.push('<figure class="img"><img src="'+imgSrc(m[1])+'" alt="'+esc(m[2]||'')+'" loading="lazy">'+(m[2]?'<figcaption>'+inline(m[2])+'</figcaption>':'')+'</figure>');
+      continue;
+    }
+    if((m=line.match(/^\s*\[펼치기(?:\s+(.*?))?\]\s*$/))){
+      fp();fl();folds++;
+      out.push('<details class="fold"><summary>'+inline(m[1]||'펼치기')+'</summary><div class="fc">');
+      continue;
+    }
+    if(/^\s*\[\/펼치기\]\s*$/.test(line)){fp();fl();if(folds>0){folds--;out.push('</div></details>')}continue}
+    if((m=line.match(/^(={2,4})\s*(.+?)\s*\1\s*$/))){
+      fp();fl();
+      var lv=m[1].length-2;c[lv]++;for(var j=lv+1;j<3;j++)c[j]=0;
+      var num=c.slice(0,lv+1).join('.'),id='h'+heads.length;
+      heads.push({lv:lv,num:num,text:m[2],id:id});
+      out.push('<h'+(lv+2)+' id="w-'+id+'"><span class="hn">'+num+'.</span> '+inline(m[2])+'</h'+(lv+2)+'>');
+      continue;
+    }
+    if(/^-{4,}\s*$/.test(line)){fp();fl();out.push('<hr>');continue}
+    if(/^\s*\[목차\]\s*$/.test(line)){fp();fl();tocAt=out.length;out.push('');continue}
+    if((m=line.match(/^\s*\*\s+(.*)$/))){fp();if(!list||list.t!=='ul'){fl();list={t:'ul',items:[]}}list.items.push(m[1]);continue}
+    if((m=line.match(/^\s*1\.\s+(.*)$/))){fp();if(!list||list.t!=='ol'){fl();list={t:'ol',items:[]}}list.items.push(m[1]);continue}
+    if((m=line.match(/^>\s?(.*)$/))){fp();fl();out.push('<blockquote>'+inline(m[1])+'</blockquote>');continue}
+    if(!line.trim()){fp();fl();continue}
+    fl();para.push(line);
+  }
+  fp();fl();
+  if(box)endBox();
+  while(folds-->0)out.push('</div></details>');
+  if(heads.length){
+    var toc='<details class="toc" open><summary>목차</summary>'+heads.map(function(h){
+      return '<div class="ti l'+h.lv+'"><a class="tl" href="#" data-h="w-'+h.id+'">'+h.num+'. '+esc(h.text)+'</a></div>';
+    }).join('')+'</details>';
+    if(tocAt>=0)out[tocAt]=toc;
+    else if(heads.length>=3){
+      var first=0;
+      for(var q=0;q<out.length;q++){if(/^<h[234] id="w-h0"/.test(out[q])){first=q;break}}
+      out.splice(first,0,toc);
+    }
+  }
+  var notes=FN;FN=null;
+  if(notes.length)out.push('<div class="fnl">'+notes.map(function(n,i){
+    return '<div id="f-'+(i+1)+'"><a href="#" class="fq" data-r="'+(i+1)+'">['+(i+1)+']</a> '+inline(n)+'</div>';
+  }).join('')+'</div>');
+  return out.join('\n');
+}
+
+/* ---------- queries ---------- */
+function backlinks(title){
+  var res=[];
+  S.pages.forEach(function(p){
+    if(p.title===title)return;
+    var re=/\[\[([^\]|]+?)(?:\|[^\]]*?)?\]\]/g,m;
+    while((m=re.exec(p.body))){if(norm(m[1])===title){res.push(p.title);break}}
+  });
+  return res.sort(function(a,b){return a.localeCompare(b,'ko')});
+}
+function recent(n){
+  return Array.from(S.pages.values()).sort(function(a,b){return b.updatedAt-a.updatedAt}).slice(0,n);
+}
+function runSearch(q){
+  var ql=q.toLowerCase(),tm=[],bm=[];
+  S.pages.forEach(function(p){
+    if(p.title===q)return;
+    if(p.title.toLowerCase().indexOf(ql)>=0){tm.push(p);return}
+    var i=p.body.toLowerCase().indexOf(ql);
+    if(i>=0)bm.push({p:p,i:i});
+  });
+  tm.sort(function(a,b){return a.title.length-b.title.length||a.title.localeCompare(b.title,'ko')});
+  return {exact:S.pages.get(q)||null,titles:tm.slice(0,40),bodies:bm.slice(0,40)};
+}
+function snippet(p,i,q){
+  var raw=p.body.slice(Math.max(0,i-30),i+q.length+70).replace(/\s+/g,' ').replace(/[=\[\]']/g,'');
+  var h=esc(raw);
+  try{h=h.replace(new RegExp(reEsc(esc(q)),'gi'),function(x){return '<mark>'+x+'</mark>'})}catch(e){}
+  return (i>30?'… ':'')+h+' …';
+}
+
+/* ---------- views ---------- */
+function banner(){
+  var t='';
+  if(S.local)t='Supabase 설정이 아직 없어서 문서가 이 브라우저에만 저장돼요. index.html 맨 위의 주소와 키를 채워 주세요.';
+  else if(S.err)t=S.err;
+  else if(S.slow)t='서버에서 아직 응답이 없어요. 보이는 문서가 최신이 아닐 수 있어요.';
+  return t?'<div class="banner" role="status">'+esc(t)+'</div>':'';
+}
+function docCard(p){
+  return '<article class="card"><div class="dh"><h1>'+esc(p.title)+'</h1><div class="acts"><button class="btn" data-act="edit" data-t="'+esc(p.title)+'">편집</button></div></div>'
+    +'<p class="meta">마지막 수정 '+rel(p.updatedAt)+'</p><div class="body">'+render(p.body)+'</div></article>';
+}
+function listHtml(items){
+  return '<ul class="list">'+items.map(function(p){
+    return '<li><a href="#" class="wl" data-t="'+esc(p.title)+'">'+esc(p.title)+'</a><span>'+rel(p.updatedAt)+'</span></li>';
+  }).join('')+'</ul>';
+}
+function recentCard(n,more){
+  var r=recent(n);
+  if(!r.length)return '';
+  return '<section class="card"><h2 class="sec">최근 변경</h2>'+listHtml(r)
+    +(more&&S.pages.size>n?'<div class="row"><button class="btn" data-go="recent">전체 보기</button></div>':'')+'</section>';
+}
+function homeV(){
+  var p=S.pages.get('대문'),h='';
+  if(p)h+=docCard(p);
+  else h+='<section class="card empty"><h1>감자위키</h1><p>'+(S.pages.size?'아직 대문 문서가 없어요.':'아직 문서가 하나도 없어요.')+' 첫 문서를 만들어서 위키를 시작해 보세요.</p>'
+    +'<div class="row"><button class="btn pri" data-act="create" data-t="대문">대문 만들기</button><button class="btn" data-go="new">새 문서</button></div></section>';
+  h+=recentCard(8,true);
+  if(S.pages.size)h+='<p class="hint">전체 문서 '+S.pages.size+'개</p>';
+  return h;
+}
+function docV(title){
+  var p=S.pages.get(title);
+  if(p){
+    var bl=backlinks(title),h=docCard(p);
+    h+='<section class="card"><h2 class="sec">이 문서를 링크한 문서</h2>'+(bl.length
+      ?'<ul class="list">'+bl.map(function(t){return '<li><a href="#" class="wl" data-t="'+esc(t)+'">'+esc(t)+'</a></li>'}).join('')+'</ul>'
+      :'<p class="hint" style="margin:0">아직 이 문서로 연결된 문서가 없어요.</p>')+'</section>';
+    return h;
+  }
+  var sim=[];
+  S.pages.forEach(function(x){if(x.title.indexOf(title)>=0||title.indexOf(x.title)>=0)sim.push(x)});
+  return '<section class="card empty"><h1>'+esc(title)+'</h1><p>이 문서는 아직 없어요. 처음으로 작성해 보세요.</p>'
+    +'<div class="row"><button class="btn pri" data-act="create" data-t="'+esc(title)+'">새 문서 만들기</button></div></section>'
+    +(sim.length?'<section class="card"><h2 class="sec">비슷한 문서</h2>'+listHtml(sim.slice(0,8))+'</section>':'');
+}
+function searchV(q){
+  var r=runSearch(q),h='<section class="card"><h1>검색</h1><p class="meta">‘'+esc(q)+'’ 검색 결과</p>';
+  if(r.exact)h+='<div class="res"><a href="#" class="wl" data-t="'+esc(r.exact.title)+'">'+esc(r.exact.title)+'</a><p>제목이 정확히 일치하는 문서</p></div>';
+  r.titles.forEach(function(p){h+='<div class="res"><a href="#" class="wl" data-t="'+esc(p.title)+'">'+esc(p.title)+'</a><p>제목에 포함</p></div>'});
+  r.bodies.forEach(function(x){h+='<div class="res"><a href="#" class="wl" data-t="'+esc(x.p.title)+'">'+esc(x.p.title)+'</a><p>'+snippet(x.p,x.i,q)+'</p></div>'});
+  if(!r.exact&&!r.titles.length&&!r.bodies.length)h+='<p class="empty" style="margin:0;color:var(--muted)">일치하는 문서가 없어요.</p>';
+  if(!r.exact&&q.length<=40)h+='<div class="row"><button class="btn pri" data-act="create" data-t="'+esc(q)+'">‘'+esc(q)+'’ 문서 만들기</button></div>';
+  return h+'</section>';
+}
+function recentV(){
+  var r=recent(50);
+  return '<section class="card"><h1>최근 변경</h1><p class="meta">최근에 수정된 문서 '+r.length+'개</p>'
+    +(r.length?listHtml(r):'<p style="margin:0;color:var(--muted)">아직 문서가 없어요.</p>')+'</section>';
+}
+function editV(v){
+  return '<form class="card edit" id="ef" autocomplete="off"><h1>'+(v.isNew?'새 문서':esc(v.title)+' 편집')+'</h1>'
+    +(v.isNew?'<label for="et">문서 제목</label><input id="et" type="text" maxlength="40" placeholder="예: 감자 요리">':'')
+    +'<div class="tabs"><button type="button" class="on" data-tab="w">작성</button><button type="button" data-tab="p">미리보기</button></div>'
+    +'<div class="tools" id="tl">'
+    +'<button type="button" class="btn" data-pre="\n== " data-post=" ==\n" data-ph="제목">제목</button>'
+    +'<button type="button" class="btn" data-pre="\'\'\'" data-post="\'\'\'" data-ph="굵게">굵게</button>'
+    +'<button type="button" class="btn" data-pre="\'\'" data-post="\'\'" data-ph="기울임">기울임</button>'
+    +'<button type="button" class="btn" data-pre="[[" data-post="]]" data-ph="문서 이름">링크</button>'
+    +'<button type="button" class="btn" data-pre="\n* " data-post="" data-ph="항목">목록</button>'
+    +'<button type="button" class="btn" data-pre="\n----\n" data-post="" data-ph="">구분선</button>'
+    +'<button type="button" class="btn" data-pre="[* " data-post="]" data-ph="각주 내용">각주</button>'
+    +'<button type="button" class="btn" data-pre="\n[펼치기 제목]\n" data-post="\n[/펼치기]\n" data-ph="접어 둘 내용">접기</button>'
+    +'<button type="button" class="btn" data-pre="\n[배너 #aee57a]\n" data-post="\n[/배너]\n" data-ph="멤버 이름 · 멤버 이름">배너</button>'
+    +'<button type="button" class="btn" data-tpl="info">정보상자</button>'
+    +'<button type="button" class="btn" data-tpl="idol">아이돌 틀</button>'
+    +'<button type="button" class="btn" data-tpl="person">인물 틀</button>'
+    +(S.assets?'<button type="button" class="btn" data-up>이미지 올리기</button><input type="file" id="fup" accept="image/*" hidden>':'')
+    +'</div><p class="hint" id="es" hidden></p>'
+    +'<label for="eb" class="sr" style="position:absolute;left:-9999px">문서 내용</label>'
+    +'<textarea id="eb" maxlength="60000" placeholder="내용을 입력하세요. 다른 문서로 연결하려면 이중 대괄호로 문서 이름을 감싸요."></textarea>'
+    +'<div id="ep" class="body pv" hidden></div>'
+    +'<p class="err" id="ee" hidden></p>'
+    +'<div class="row"><button class="btn pri" type="submit" id="sv">저장</button><button class="btn" type="button" data-act="cancel">취소</button></div></form>';
+}
+var TPL={
+person:'[정보상자]\n제목 = 이름\n부제 = 영어 이름\n본명 = 입력\n생년월일 = 입력\n출신지 = 입력\n소속 그룹 = 입력\n포지션 = 입력\n[/정보상자]\n\n[목차]\n\n== 개요 ==\n이름과 소속 그룹을 한두 문장으로 소개해요.\n\n== 프로필 ==\n=== 기본 정보 ===\n=== 포지션과 실력 ===\n\n== 활동 ==\n=== 그룹 활동 ===\n=== 개인 활동 ===\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]\n',
+info:'[정보상자]\n제목 = 이름\n부제 = 부제\n데뷔일 = 2026년 1월 1일\n장르 = 장르\n소속사 = 소속사 이름\n[/정보상자]\n',
+idol:'[정보상자]\n제목 = 그룹 이름\n부제 = 한글 이름\n데뷔일 = 2026년 1월 1일\n데뷔 음반 = 음반 이름\n장르 = 장르\n소속사 = 소속사 이름\n[/정보상자]\n\n[배너 #aee57a]\n멤버 이름 · 멤버 이름 · 멤버 이름\nDebut Single 음반 이름\n[/배너]\n\n[목차]\n\n== 개요 ==\n그룹을 한두 문장으로 소개해요.[* 출처나 보충 설명은 이렇게 달아요.]\n\n== 멤버 ==\n* 이름: 포지션\n=== 멤버 간 케미 ===\n내용을 적어 주세요.\n\n== 특징 ==\n=== 그룹명 ===\n=== 로고 ===\n=== 콘셉트 ===\n\n== 음반 ==\n* 음반 이름 (발매일)\n\n== 활동 ==\n=== 공연 및 행사 ===\n=== 콘텐츠 ===\n\n== 수상 경력 ==\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]\n'
+};
+function draw(){
+  var v=S.view,h=banner();
+  if(!S.ready&&v.t!=='edit')h+='<section class="card empty"><p>문서를 불러오는 중이에요…</p></section>';
+  else if(v.t==='home')h+=homeV();
+  else if(v.t==='doc')h+=docV(v.title);
+  else if(v.t==='search')h+=searchV(v.q);
+  else if(v.t==='recent')h+=recentV();
+  else if(v.t==='edit')h+=editV(v);
+  app.innerHTML=h;
+  if(v.t==='edit'){
+    $('#eb').value=v.draft||'';
+    if(v.isNew)$('#et').value=v.title||'';
+    (v.isNew&&!v.title?$('#et'):$('#eb')).focus();
+  }
+  $('#bk').hidden=!S.stack.length;
+}
+function go(v){
+  S.stack.push(S.view);if(S.stack.length>30)S.stack.shift();
+  S.view=v;draw();window.scrollTo(0,0);
+}
+function back(){
+  if(!S.stack.length)return;
+  S.view=S.stack.pop();draw();window.scrollTo(0,0);
+}
+function refresh(){if(S.view.t!=='edit')draw()}
+
+/* ---------- saving ---------- */
+function persist(){try{localStorage.setItem('potato-wiki-v1',JSON.stringify(Array.from(S.pages.values())))}catch(e){}}
+function put(title,body){
+  var rec={title:title,body:body,updatedAt:Date.now()};
+  var p=S.sb?S.sb.from('pages').upsert({title:title,body:body,updated_at:rec.updatedAt}).then(function(r){if(r.error)throw r.error}):Promise.resolve();
+  return p.then(function(){S.pages.set(title,rec);if(!S.sb)persist()});
+}
+function saveErr(e){
+  var c=e&&e.code;
+  if(c==='invalid_argument'||c==='42501'||c==='401'||c==='403')return '이 문서를 저장할 권한이 없어요. 위키에 편집 권한이 있는지 확인해 주세요.';
+  if(c==='quota_exceeded')return '저장 공간이 가득 찼어요. 오래된 문서를 정리한 뒤 다시 시도해 주세요.';
+  if(c==='resource_exhausted')return '요청이 너무 많아요. 잠시 뒤에 다시 저장해 주세요.';
+  return '저장하지 못했어요. 잠시 뒤에 다시 시도해 주세요.';
+}
+function onSave(e){
+  e.preventDefault();
+  var v=S.view,err=$('#ee'),btn=$('#sv');
+  var title=v.isNew?norm($('#et').value):v.title,body=$('#eb').value;
+  function bad(t){err.textContent=t;err.hidden=false}
+  err.hidden=true;
+  if(!title)return bad('문서 제목을 입력해 주세요.');
+  if(title.length>40)return bad('제목은 40자 이하로 써 주세요.');
+  if(/[\[\]|<>]/.test(title))return bad('제목에는 [ ] | < > 문자를 쓸 수 없어요.');
+  if(idOf(title).length>190)return bad('제목이 너무 길어요. 조금 줄여 주세요.');
+  if(v.isNew&&S.pages.has(title))return bad('같은 제목의 문서가 이미 있어요. 그 문서를 편집해 주세요.');
+  if(!body.trim())return bad('내용을 입력해 주세요.');
+  btn.disabled=true;btn.textContent='저장 중…';
+  put(title,body).then(function(){
+    S.view={t:'doc',title:title};S.stack=S.stack.filter(function(x){return x.t!=='edit'});
+    draw();window.scrollTo(0,0);
+  }).catch(function(er){
+    btn.disabled=false;btn.textContent='저장';bad(saveErr(er));
+  });
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',function(e){
+  var t=e.target,el;
+  if((el=t.closest('a.wl'))){
+    e.preventDefault();
+    if(S.view.t==='edit')return;
+    go({t:'doc',title:el.dataset.t});return;
+  }
+  if((el=t.closest('a.tl'))){
+    e.preventDefault();
+    var h=document.getElementById(el.dataset.h);
+    if(h)h.scrollIntoView({block:'start'});
+    return;
+  }
+  if(t.closest('[data-top]')){window.scrollTo({top:0});return}
+  if((el=t.closest('a.fa'))){e.preventDefault();var fe=document.getElementById('f-'+el.dataset.f);if(fe)fe.scrollIntoView({block:'center'});return}
+  if((el=t.closest('a.fq'))){e.preventDefault();var re=document.getElementById('r-'+el.dataset.r);if(re)re.scrollIntoView({block:'center'});return}
+  if((el=t.closest('[data-go]'))){
+    var g=el.dataset.go;
+    if(g==='back')return back();
+    if(g==='home'){S.stack=[];S.view={t:'home'};draw();window.scrollTo(0,0);return}
+    if(g==='recent')return go({t:'recent'});
+    if(g==='new')return go({t:'edit',isNew:true,title:'',draft:''});
+    if(g==='random'){
+      var cur=S.view.t==='doc'?S.view.title:'';
+      var all=Array.from(S.pages.keys()).filter(function(k){return k!==cur});
+      if(!all.length)return go({t:'home'});
+      return go({t:'doc',title:all[Math.floor(Math.random()*all.length)]});
+    }
+    return;
+  }
+  if((el=t.closest('[data-act]'))){
+    var a=el.dataset.act;
+    if(a==='edit'){var p=S.pages.get(el.dataset.t);return go({t:'edit',isNew:false,title:el.dataset.t,draft:p?p.body:''})}
+    if(a==='create')return go({t:'edit',isNew:true,title:el.dataset.t,draft:''});
+    if(a==='cancel')return back();
+    return;
+  }
+  if((el=t.closest('[data-tab]'))){
+    var pv=$('#ep'),ta=$('#eb'),tl=$('#tl'),on=el.dataset.tab==='p';
+    document.querySelectorAll('[data-tab]').forEach(function(b){b.classList.toggle('on',b===el)});
+    pv.hidden=!on;ta.hidden=on;tl.hidden=on;
+    if(on)pv.innerHTML=ta.value.trim()?render(ta.value):'<p class="hint">미리 볼 내용이 없어요.</p>';
+    else ta.focus();
+    return;
+  }
+  if(t.closest('[data-up]')){var fu=$('#fup');if(fu)fu.click();return}
+  if((el=t.closest('[data-tpl]'))){
+    var tp=$('#eb'),ps=tp.selectionStart;
+    tp.setRangeText(TPL[el.dataset.tpl]||'',ps,tp.selectionEnd,'end');tp.focus();return;
+  }
+  if((el=t.closest('[data-pre]'))){
+    var tx=$('#eb'),s=tx.selectionStart,en=tx.selectionEnd;
+    var sel=tx.value.slice(s,en)||el.dataset.ph||'';
+    tx.setRangeText(el.dataset.pre+sel+el.dataset.post,s,en,'end');
+    tx.focus();
+  }
+});
+document.addEventListener('submit',function(e){
+  if(e.target.id==='ef')return onSave(e);
+  if(e.target.id==='sf'){
+    e.preventDefault();
+    var q=norm($('#q').value);
+    if(q){if(S.view.t==='edit'&&!window.confirm)return;go({t:'search',q:q});$('#q').blur()}
+  }
+});
+
+/* ---------- boot ---------- */
+var SEED=[{"title": "도움말", "body": "[목차]\n\n== 문서 만들기 ==\n위의 '새 문서' 버튼을 누르거나, 붉은색 링크를 누르면 문서를 만들 수 있어요. 제목은 40자까지 쓸 수 있어요. 아이돌 문서 구성이 필요하면 편집 도구의 '아이돌 틀'을 눌러 보세요. 완성된 모습은 [[예시 아이돌 그룹]]에서 볼 수 있어요.\n\n== 기본 문법 ==\n* 제목: {{{== 제목 ==}}} 처럼 =로 감싸요. =이 많을수록 작은 제목이에요. (2~4개)\n* 굵게: {{{'''굵게'''}}}\n* 기울임: {{{''기울임''}}}\n* 취소선: {{{~~취소선~~}}}\n* 문서 링크: {{{[[감자]]}}} 또는 표시 글자를 바꾸려면 {{{[[감자|고구마 아님]]}}}\n* 바깥 링크: {{{[[https://example.com|사이트 이름]]}}}\n* 목록: 줄 앞에 {{{* }}}\n* 번호 목록: 줄 앞에 {{{1. }}}\n* 인용: 줄 앞에 {{{> }}}\n* 구분선: {{{----}}}\n* 목차 위치 지정: {{{[목차]}}} (제목이 3개 이상이면 자동으로 들어가요)\n* 문법 그대로 보여주기: {{{ 와 }}} 로 감싸요.\n\n== 각주 ==\n본문 중간에 {{{[* 각주 내용]}}} 을 쓰면 번호가 붙고 문서 맨 아래에 각주 목록이 생겨요. 번호를 누르면 서로 오갈 수 있어요.\n\n== 접기 ==\n{{{[펼치기 제목]}}} 과 {{{[/펼치기]}}} 사이의 내용은 접어 둘 수 있어요.\n\n== 정보상자 ==\n문서 오른쪽 위(폰에서는 맨 위)에 표가 나와요. 한 줄에 {{{이름 = 값}}} 형태로 쓰고, '제목'과 '부제'는 상자 윗부분에 크게 나와요.\n\n[펼치기 정보상자 작성 예]\n{{{[정보상자]}}}\n{{{제목 = 그룹 이름}}}\n{{{부제 = 한글 이름}}}\n{{{데뷔일 = 2026년 1월 1일}}}\n{{{소속사 = 소속사 이름}}}\n{{{[/정보상자]}}}\n[/펼치기]\n\n== 배너 ==\n멤버 이름이나 음반 이름을 색 띠로 보여줘요. {{{[배너 #aee57a]}}} 와 {{{[/배너]}}} 사이에 줄마다 한 줄씩 써요. 색은 #과 영문·숫자 3자리 또는 6자리예요.\n\n== 이미지 ==\n편집 도구의 '이미지 올리기'로 사진을 올리면 {{{[이미지 주소]}}} 줄이 들어가요. 사진은 자동으로 줄여서 올라가요. 이 주소는 배너({{{[배너 주소 #색]}}})나 정보상자({{{이미지 = 주소}}})에도 쓸 수 있어요.\n\n== 링크 색 ==\n이미 있는 문서로 가는 링크는 초록색, 아직 없는 문서로 가는 링크는 붉은색이에요. 붉은 링크를 눌러 문서를 채워 넣으면 위키가 자라요.\n\n== 같이 보기 ==\n* [[대문]]\n* [[감자]]", "updatedAt": 1794730000000}, {"title": "대문", "body": "'''감자위키'''에 오신 것을 환영합니다. 누구나 문서를 만들고 고칠 수 있는 공유 위키예요.\n\n== 시작하기 ==\n* 위의 검색창으로 문서를 찾아보세요.\n* 문서 쓰는 방법은 [[도움말]]에서 볼 수 있어요.\n* 처음 읽어볼 문서로 [[감자]]를 추천해요.\n* 아이돌 문서 모양은 [[예시 아이돌 그룹]]에서 볼 수 있어요.\n* 없는 문서는 붉은색 링크로 보여요. 눌러서 바로 만들 수 있어요.\n\n== 문서 목록 ==\n'새 문서' 버튼으로 만든 문서는 '최근 변경'에 가장 먼저 나타나요.", "updatedAt": 1794729600000}, {"title": "바다", "body": "[정보상자]\n제목 = 바다\n부제 = 영어 이름\n본명 = 입력\n생년월일 = 입력\n출신지 = 입력\n소속 그룹 = 입력\n포지션 = 입력\n[/정보상자]\n\n[목차]\n\n== 개요 ==\n이름과 소속 그룹을 한두 문장으로 소개해요.\n\n== 프로필 ==\n=== 기본 정보 ===\n=== 포지션과 실력 ===\n\n== 활동 ==\n=== 그룹 활동 ===\n=== 개인 활동 ===\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]", "updatedAt": 1794731000000}, {"title": "감자", "body": "'''감자'''는 가지과 식물로, 땅속줄기 끝이 부풀어 생긴 덩이줄기를 먹는 작물이에요. 원산지는 남아메리카 안데스 산지로 알려져 있고, 이후 여러 나라로 퍼져 주요 식량 작물이 되었어요.\n\n== 종류 ==\n* 러셋: 갈색 껍질에 길쭉한 모양이라 굽거나 튀기는 요리에 많이 써요.\n* 유콘 골드: 속살이 노랗고 맛이 고소해요.\n* 보라 감자: 껍질과 속살이 보랏빛을 띠어요.\n\n== 보관과 주의 ==\n햇빛이 들지 않는 서늘한 곳에 보관해요. 싹이 났거나 껍질이 초록색으로 변한 부분에는 솔라닌이 들어 있으니 도려내고, 많이 변했다면 먹지 않는 게 좋아요.\n\n== 같이 보기 ==\n* [[감자 요리]]\n* [[대문]]", "updatedAt": 1794729600000}, {"title": "예시 아이돌 그룹", "body": "[정보상자]\n제목 = Lumion\n부제 = 틀을 보여주기 위한 가상의 그룹\n데뷔일 = 2026년 1월 1일\n데뷔 음반 = 첫 번째 싱글\n장르 = 팝[* 이 문서의 내용은 모두 틀을 보여주려고 지어낸 예시예요. 실제 그룹이 아니에요.]\n소속사 = 예시엔터테인먼트\n[/정보상자]\n\n[배너 #aee57a]\n희원 · 조서연 · 바다  · 연우  · 이서연  · 지호\nDebut Single 예시\n[/배너]\n\n[목차]\n\n== 개요 ==\n'''예시 그룹'''은 위키 문서 틀을 보여주기 위해 만든 가상의 그룹이에요. 새 문서를 만들 때 편집 도구의 '아이돌 틀' 버튼을 누르면 이 문서와 같은 구성을 불러올 수 있어요.\n\n== 멤버 ==\n* 멤버1: 리더, 보컬\n* 멤버2: 댄스\n* 멤버3: 비주얼\n=== 멤버 간 케미 ===\n멤버끼리 잘 맞는 점을 적는 칸이에요.\n=== 멤버 간 이야기 ===\n연습생 시절 이야기 같은 내용을 적어요.\n\n== 특징 ==\n=== 그룹명 ===\n이름의 뜻을 적어요.\n=== 로고 ===\n로고 이미지는 '이미지 올리기' 버튼으로 넣을 수 있어요.\n=== 콘셉트 ===\n활동 콘셉트를 적어요.\n\n== 음반 ==\n* 첫 번째 싱글 (2026년 1월 1일)\n\n== 활동 ==\n=== 공연 및 행사 ===\n=== 음악 방송 직캠 ===\n\n== 수상 경력 ==\n아직 없어요.\n\n== 여담 ==\n[펼치기 접어 둔 내용 보기]\n접기 문법으로 긴 내용을 숨길 수 있어요.\n[/펼치기]\n\n== 둘러보기 ==\n* [[대문]]\n* [[도움말]]", "updatedAt": 1794730754356}, {"title": "희원", "body": "[정보상자]\n제목 = 희원\n부제 = 영어 이름\n본명 = 입력\n생년월일 = 입력\n출신지 = 입력\n소속 그룹 = 입력\n포지션 = 입력\n[/정보상자]\n\n[목차]\n\n== 개요 ==\n이름과 소속 그룹을 한두 문장으로 소개해요.\n\n== 프로필 ==\n=== 기본 정보 ===\n=== 포지션과 실력 ===\n\n== 활동 ==\n=== 그룹 활동 ===\n=== 개인 활동 ===\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]", "updatedAt": 1794731000000}];
+draw();
+window.addEventListener('scroll',function(){var u=$('#up');if(u)u.hidden=window.scrollY<400},{passive:true});
+function fromRow(r){return {title:r.title,body:String(r.body||''),updatedAt:Number(r.updated_at)||0}}
+function load(){
+  return S.sb.from('pages').select('title,body,updated_at').limit(1000).then(function(r){
+    if(r.error){S.err='문서를 불러오지 못했어요. 주소와 키, pages 표 설정을 확인해 주세요.';S.ready=true;refresh();return}
+    if(!r.data.length&&!S.seeded){
+      S.seeded=true;
+      return S.sb.from('pages').upsert(SEED.map(function(p){return {title:p.title,body:p.body,updated_at:p.updatedAt}})).then(load);
+    }
+    var m=new Map();
+    r.data.forEach(function(x){m.set(x.title,fromRow(x))});
+    S.pages=m;S.ready=true;S.err='';refresh();
+  },function(){S.err='서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.';S.ready=true;refresh()});
+}
+function shrink(file){
+  return new Promise(function(res,rej){
+    var img=new Image(),u=URL.createObjectURL(file);
+    img.onload=function(){
+      var r=Math.min(1,1600/Math.max(img.width,img.height)),w=Math.round(img.width*r),h=Math.round(img.height*r);
+      var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+      var t=file.type==='image/png'?'image/png':'image/jpeg';
+      c.toBlob(function(bl){URL.revokeObjectURL(u);bl?res({blob:bl,type:t}):rej(new Error('resize'))},t,0.85);
+    };
+    img.onerror=function(){URL.revokeObjectURL(u);rej(new Error('decode'))};
+    img.src=u;
+  });
+}
+function uploadImage(file){
+  return shrink(file).then(function(o){
+    var path=Date.now()+'-'+Math.random().toString(36).slice(2,8)+(o.type==='image/png'?'.png':'.jpg');
+    var st=S.sb.storage.from('images');
+    return st.upload(path,o.blob,{contentType:o.type,cacheControl:'31536000'}).then(function(r){
+      if(r.error)throw r.error;
+      return st.getPublicUrl(path).data.publicUrl;
+    });
+  });
+}
+document.addEventListener('change',function(e){
+  if(e.target.id!=='fup')return;
+  var f=e.target.files[0],es=$('#es');
+  if(!f||!S.assets||!es)return;
+  es.hidden=false;es.textContent='이미지를 올리는 중이에요…';
+  S.assets.upload(f).then(function(url){
+    var tx=$('#eb');
+    tx.setRangeText('\n[이미지 '+url+']\n',tx.selectionStart,tx.selectionEnd,'end');
+    es.textContent='올렸어요. 이 주소는 배너나 정보상자의 이미지에도 쓸 수 있어요.';
+  }).catch(function(){es.textContent='이미지를 올리지 못했어요. Supabase의 images 저장소 설정을 확인해 주세요.'});
+  e.target.value='';
+});
+var okCfg=window.supabase&&/^https:\/\//.test(SUPABASE_URL)&&SUPABASE_URL.indexOf('여기')<0&&SUPABASE_KEY.indexOf('여기')<0;
+S.assets=null;
+if(!okCfg){
+  S.local=true;
+  var saved=null;
+  try{saved=JSON.parse(localStorage.getItem('potato-wiki-v1')||'null')}catch(e){}
+  (Array.isArray(saved)?saved:SEED).forEach(function(p){S.pages.set(p.title,{title:p.title,body:String(p.body||''),updatedAt:Number(p.updatedAt)||0})});
+  S.ready=true;draw();
+}else{
+  S.sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  S.assets={upload:uploadImage};
+  load();
+  window.addEventListener('focus',load);
+  setInterval(function(){if(!document.hidden)load()},30000);
+}
+})();
+</script>
+
+</body>
+</html>
