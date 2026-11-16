@@ -159,6 +159,7 @@ sup.fn a{font-size:.78em}
 .gcard .cn{display:flex;flex-wrap:wrap;justify-content:space-around;gap:6px 14px;margin:14px 0 10px;font-size:.95rem}
 .gcard .cb{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px}
 .gcard .cb a{display:block;padding:11px 8px;border-radius:999px;font-weight:700;background:color-mix(in srgb,var(--ibi) 16%,transparent)}
+.btn.dng{margin-left:auto;color:#c0392b;border-color:#c0392b}
 .fnov{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px))}
 .fnb{width:min(100%,640px);max-height:80vh;display:flex;flex-direction:column;background:var(--surface);color:var(--fg);border-radius:8px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.35)}
 .fnt{padding:20px 22px;overflow:auto;line-height:1.7;font-size:.98rem}
@@ -624,7 +625,7 @@ function editV(v){
     +'<textarea id="eb" maxlength="60000" placeholder="내용을 입력하세요. 다른 문서로 연결하려면 이중 대괄호로 문서 이름을 감싸요."></textarea>'
     +'<div id="ep" class="body pv" hidden></div>'
     +'<p class="err" id="ee" hidden></p>'
-    +'<div class="row"><button class="btn pri" type="submit" id="sv">저장</button><button class="btn" type="button" data-act="cancel">취소</button></div></form>';
+    +'<div class="row"><button class="btn pri" type="submit" id="sv">저장</button><button class="btn" type="button" data-act="cancel">취소</button>'+(v.isNew?'':'<button class="btn dng" type="button" data-act="del" data-t="'+esc(v.title)+'">문서 삭제</button>')+'</div><p class="hint" id="de" hidden></p></form>';
 }
 var TPL={
 person:'[정보상자]\n색 = #8fb28f\n제목 = 이름\n부제 = 영어 이름\n사진 = 이미지 주소\n본명 = 입력\n출생 = 2000년 1월 1일\n출생 = 출신지\n신체 = 키 | 혈액형\n가족 = 부모님\n가족 = 반려견 이름\n소속사 = 입력\n소속 그룹 = 입력\n데뷔 = 입력\n[/정보상자]\n\n[목차]\n\n== 개요 ==\n이름과 소속 그룹을 한두 문장으로 소개해요.\n\n== 데뷔 전 ==\n[사진 #8fb28f]\n이미지 주소\n이미지 주소\n▲ 사진 설명\n[/사진]\n* 데뷔 전 이야기를 적어요.\n\n== 포지션 ==\n=== 댄스 ===\n[영상]\n유튜브 주소\n유튜브 주소\n[/영상]\n=== 보컬 ===\n\n== 활동 ==\n=== 그룹 활동 ===\n=== 개인 활동 ===\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]\n',
@@ -766,6 +767,27 @@ document.addEventListener('click',function(e){
     if(a==='edit'){var p=S.pages.get(el.dataset.t);return go({t:'edit',isNew:false,title:el.dataset.t,draft:p?p.body:''})}
     if(a==='create')return go({t:'edit',isNew:true,title:el.dataset.t,draft:''});
     if(a==='cancel')return back();
+    if(a==='del'){
+      var dt=el.dataset.t,de=$('#de');
+      if(el.dataset.arm!=='1'){
+        el.dataset.arm='1';el.textContent='정말 삭제할까요? 한 번 더 누르세요';
+        setTimeout(function(){if(el.isConnected){el.dataset.arm='';el.textContent='문서 삭제'}},4000);
+        return;
+      }
+      el.disabled=true;
+      (S.sb?S.sb.from('pages').delete().eq('title',dt).select().then(function(r){
+        if(r.error)throw r.error;
+        if(!r.data||!r.data.length){var er=new Error('no-rows');er.code='42501';throw er}
+      }):Promise.resolve()).then(function(){
+        S.pages.delete(dt);if(!S.sb)persist();
+        S.stack=S.stack.filter(function(x){return !(x.title===dt)});
+        S.view={t:'home'};draw();window.scrollTo(0,0);
+      }).catch(function(){
+        el.disabled=false;el.dataset.arm='';el.textContent='문서 삭제';
+        if(de){de.hidden=false;de.textContent='삭제하지 못했어요. Supabase에 삭제 권한(정책)이 있는지 확인해 주세요.'}
+      });
+      return;
+    }
     return;
   }
   if((el=t.closest('[data-tab]'))){
