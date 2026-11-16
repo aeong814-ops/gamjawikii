@@ -140,23 +140,23 @@ sup.fn a{font-size:.78em}
 .ib[style] th,.ib[style] td{border-color:var(--ibc)}
 .ib.ctr td{text-align:center}
 .ib[style] .ibh span{color:inherit;opacity:.85}
-.nav{margin:1em 0;clear:both;border:1px solid var(--line);background:var(--surface);--ibc:#00704a;--ibi:#fff}
-.nav summary{cursor:pointer;list-style:none;text-align:center;font-weight:700;padding:10px 12px;background:var(--ibc);color:var(--ibi)}
-.nav summary::-webkit-details-marker{display:none}
-.nav summary::after{content:" ▾";opacity:.8}
-.nav:not([open]) summary::after{content:" ▸"}
-.nav .nr{padding:8px 12px;text-align:center;border-top:1px solid var(--line);line-height:1.8}
-.nav .nr:first-of-type{border-top:0}
-.card{margin:1em 0;border-radius:12px;padding:16px 14px 18px;text-align:center;background:var(--ibc);color:var(--ibi);clear:both}
-.card a{color:inherit;text-decoration:none}
-.card .ch{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
-.card .ch img{max-height:64px;max-width:40%;object-fit:contain}
-.card .ct{text-align:left}
-.card .ct b{display:block;font-size:1.3rem;line-height:1.25}
-.card .ct span{display:block;font-size:.9rem;opacity:.85}
-.card .cn{display:flex;flex-wrap:wrap;justify-content:space-around;gap:6px 14px;margin:14px 0 10px;font-size:.95rem}
-.card .cb{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px}
-.card .cb a{display:block;padding:11px 8px;border-radius:999px;font-weight:700;background:color-mix(in srgb,var(--ibi) 16%,transparent)}
+.nvb{margin:1em 0;clear:both;border:1px solid var(--line);background:var(--surface);--ibc:#00704a;--ibi:#fff}
+.nvb summary{cursor:pointer;list-style:none;text-align:center;font-weight:700;padding:10px 12px;background:var(--ibc);color:var(--ibi)}
+.nvb summary::-webkit-details-marker{display:none}
+.nvb summary::after{content:" ▾";opacity:.8}
+.nvb:not([open]) summary::after{content:" ▸"}
+.nvb .nr{padding:8px 12px;text-align:center;border-top:1px solid var(--line);line-height:1.8}
+.nvb .nr:first-of-type{border-top:0}
+.gcard{margin:1em 0;border-radius:12px;padding:16px 14px 18px;text-align:center;background:var(--ibc);color:var(--ibi);clear:both}
+.gcard a{color:inherit;text-decoration:none}
+.gcard .ch{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
+.gcard .ch img{max-height:64px;max-width:40%;object-fit:contain}
+.gcard .ct{text-align:left}
+.gcard .ct b{display:block;font-size:1.3rem;line-height:1.25}
+.gcard .ct span{display:block;font-size:.9rem;opacity:.85}
+.gcard .cn{display:flex;flex-wrap:wrap;justify-content:space-around;gap:6px 14px;margin:14px 0 10px;font-size:.95rem}
+.gcard .cb{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px}
+.gcard .cb a{display:block;padding:11px 8px;border-radius:999px;font-weight:700;background:color-mix(in srgb,var(--ibi) 16%,transparent)}
 .qb{margin:1em 0;padding:14px 18px;border:2px solid var(--ibc,#f2b8d8);border-left-width:22px;border-radius:2px;background:var(--surface);display:inline-block;max-width:100%}
 .cat{margin:1em 0;padding:8px 12px;border:1px solid var(--line);border-radius:4px;font-size:.9rem;background:var(--surface);clear:both}
 .cat b{margin-right:4px}
@@ -327,7 +327,7 @@ function navHtml(b){
   var ls=b.lines.filter(function(l){return l.trim()});
   var title=ls.length?ls.shift().trim():'둘러보기';
   var st=b.color?' style="--ibc:'+b.color+';--ibi:'+ink(b.color)+'"':'';
-  return '<details class="nav" open'+st+'><summary>'+inline(title)+'</summary>'
+  return '<details class="nvb" open'+st+'><summary>'+inline(title)+'</summary>'
     +ls.map(function(l){return '<div class="nr">'+nameLine(l)+'</div>'}).join('')+'</details>';
 }
 function cardHtml(b){
@@ -341,7 +341,7 @@ function cardHtml(b){
     else if(k==='버튼')btns.push(v);
   });
   var st=' style="--ibc:'+(b.color||'#0b0d12')+';--ibi:'+ink(b.color||'#0b0d12')+'"';
-  return '<section class="card"'+st+'>'
+  return '<section class="gcard"'+st+'>'
     +(t||img?'<div class="ch">'+(img?'<img src="'+imgSrc(img)+'" alt="">':'')+'<div class="ct"><b>'+inline(t)+'</b>'+subs.map(function(x){return '<span>'+inline(x)+'</span>'}).join('')+'</div></div>':'')
     +(names.length?'<div class="cn">'+names.map(function(n){return '<span>'+nameLine(n)+'</span>'}).join('')+'</div>':'')
     +(btns.length?'<div class="cb">'+btns.map(function(x){return inline(x.replace(/^\[\[([^\]|]+)\]\]$/,'[[$1|$1]]'))}).join('')+'</div>':'')
