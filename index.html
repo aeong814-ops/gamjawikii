@@ -164,7 +164,8 @@ sup.fn a{font-size:.78em}
 .chip{display:inline-block;padding:1px 14px;border-radius:999px;font-weight:700;background:var(--soft);line-height:1.6}
 .dd{display:block;font-size:.85rem;color:var(--muted)}
 .dd b{color:var(--fg)}
-.cpk{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
+.pickl{position:relative;overflow:hidden;display:inline-flex;align-items:center;cursor:pointer}
+.pickl .cpk{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
 .fnov{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px))}
 .fnb{width:min(100%,640px);max-height:80vh;display:flex;flex-direction:column;background:var(--surface);color:var(--fg);border-radius:8px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.35)}
 .fnt{padding:20px 22px;overflow:auto;line-height:1.7;font-size:.98rem}
@@ -643,8 +644,8 @@ function editV(v){
     +'<button type="button" class="btn" data-pre="\n[카드 #0b0d12]\n제목 = 그룹 이름\n부제 = 한글 이름\n이름 = 멤버 · 멤버 · 멤버\n버튼 = [[문서|한국 음반]]\n버튼 = [[문서|관련 문서]]\n" data-post="\n[/카드]\n" data-ph="">카드</button>'
     +'<button type="button" class="btn" data-pre="\n[인용 #f2b8d8]\n" data-post="\n[/인용]\n" data-ph="인용 문구">인용</button>'
     +'<button type="button" class="btn" data-pre="\n[분류] " data-post="" data-ph="[[문서]] | [[문서]]">분류</button>'
-    +'<button type="button" class="btn" data-pick="wrap">글자색</button>'
-    +'<button type="button" class="btn" data-pick="ins">색 코드</button><input type="color" id="cpk" class="cpk" value="#e91e63" tabindex="-1" aria-hidden="true">'
+    +'<label class="btn pickl" data-mode="wrap">글자색<input type="color" class="cpk" value="#e91e63" aria-label="글자색 고르기"></label>'
+    +'<label class="btn pickl" data-mode="ins">색 코드<input type="color" class="cpk" value="#8fb28f" aria-label="색 코드 고르기"></label>'
     +'<button type="button" class="btn" data-pre="[크기 150 " data-post="]" data-ph="글자">글자크기</button>'
     +'<button type="button" class="btn" data-tpl="info">정보상자</button>'
     +'<button type="button" class="btn" data-tpl="idol">아이돌 틀</button>'
@@ -828,13 +829,6 @@ document.addEventListener('click',function(e){
     else ta.focus();
     return;
   }
-  if((el=t.closest('[data-pick]'))){
-    var tx0=$('#eb'),pk=$('#cpk');
-    if(!tx0||!pk)return;
-    S.pick={mode:el.dataset.pick,a:tx0.selectionStart,b:tx0.selectionEnd};
-    pk.click();
-    return;
-  }
   if(t.closest('[data-up]')){var fu=$('#fup');if(fu)fu.click();return}
   if((el=t.closest('[data-tpl]'))){
     var tp=$('#eb'),ps=tp.selectionStart;
@@ -859,6 +853,13 @@ document.addEventListener('submit',function(e){
 /* ---------- boot ---------- */
 var SEED=[{"title": "도움말", "body": "[목차]\n\n== 문서 만들기 ==\n위의 '새 문서' 버튼을 누르거나, 붉은색 링크를 누르면 문서를 만들 수 있어요. 제목은 40자까지 쓸 수 있어요. 아이돌 문서 구성이 필요하면 편집 도구의 '아이돌 틀'을 눌러 보세요. 완성된 모습은 [[예시 아이돌 그룹]]에서 볼 수 있어요.\n\n== 기본 문법 ==\n* 제목: {{{== 제목 ==}}} 처럼 =로 감싸요. =이 많을수록 작은 제목이에요. (2~4개)\n* 굵게: {{{'''굵게'''}}}\n* 기울임: {{{''기울임''}}}\n* 취소선: {{{~~취소선~~}}}\n* 문서 링크: {{{[[감자]]}}} 또는 표시 글자를 바꾸려면 {{{[[감자|고구마 아님]]}}}\n* 바깥 링크: {{{[[https://example.com|사이트 이름]]}}}\n* 목록: 줄 앞에 {{{* }}}\n* 번호 목록: 줄 앞에 {{{1. }}}\n* 인용: 줄 앞에 {{{> }}}\n* 구분선: {{{----}}}\n* 목차 위치 지정: {{{[목차]}}} (제목이 3개 이상이면 자동으로 들어가요)\n* 문법 그대로 보여주기: {{{ 와 }}} 로 감싸요.\n\n== 각주 ==\n본문 중간에 {{{[* 각주 내용]}}} 을 쓰면 번호가 붙고 문서 맨 아래에 각주 목록이 생겨요. 번호를 누르면 서로 오갈 수 있어요.\n\n== 접기 ==\n{{{[펼치기 제목]}}} 과 {{{[/펼치기]}}} 사이의 내용은 접어 둘 수 있어요.\n\n== 정보상자 ==\n문서 오른쪽 위(폰에서는 맨 위)에 표가 나와요. 한 줄에 {{{이름 = 값}}} 형태로 쓰고, '제목'과 '부제'는 상자 윗부분에 크게 나와요.\n\n[펼치기 정보상자 작성 예]\n{{{[정보상자]}}}\n{{{제목 = 그룹 이름}}}\n{{{부제 = 한글 이름}}}\n{{{데뷔일 = 2026년 1월 1일}}}\n{{{소속사 = 소속사 이름}}}\n{{{[/정보상자]}}}\n[/펼치기]\n\n== 배너 ==\n멤버 이름이나 음반 이름을 색 띠로 보여줘요. {{{[배너 #aee57a]}}} 와 {{{[/배너]}}} 사이에 줄마다 한 줄씩 써요. 색은 #과 영문·숫자 3자리 또는 6자리예요.\n\n== 이미지 ==\n편집 도구의 '이미지 올리기'로 사진을 올리면 {{{[이미지 주소]}}} 줄이 들어가요. 사진은 자동으로 줄여서 올라가요. 이 주소는 배너({{{[배너 주소 #색]}}})나 정보상자({{{이미지 = 주소}}})에도 쓸 수 있어요.\n\n== 정보상자 칸 여러 개 ==\n같은 이름을 연달아 쓰면 한 칸 안에 나뉘어 들어가요. 예를 들어 {{{가족 = 부모님}}} 다음 줄에 {{{가족 = 반려견 이름}}}을 쓰면 가족 칸이 둘로 나뉘어요. 값 사이에 {{{ | }}}를 쓰면 구분선이 들어가요. {{{색 = #8fb28f}}}로 상자 색을, {{{사진 = 주소}}}로 큰 사진을 넣어요.\n\n== 사진과 영상 ==\n{{{[사진 #8fb28f]}}} 와 {{{[/사진]}}} 사이에 이미지 주소를 한 줄에 하나씩 쓰면 나란히 보이고, 그 밖의 줄은 아래 설명이 돼요. {{{[영상]}}} 과 {{{[/영상]}}} 사이에 유튜브 주소를 쓰면 영상이 나란히 나와요. 원하는 위치에 쓰면 그 자리에 들어가요.\n\n== 문단 접기와 편집 ==\n문단 제목을 누르면 그 문단이 접히고 펴져요. 제목 오른쪽의 [편집]을 누르면 그 문단으로 바로 가요.\n\n== 링크 색 ==\n이미 있는 문서로 가는 링크는 초록색, 아직 없는 문서로 가는 링크는 붉은색이에요. 붉은 링크를 눌러 문서를 채워 넣으면 위키가 자라요.\n\n== 같이 보기 ==\n* [[대문]]\n* [[감자]]", "updatedAt": 1794730000000}, {"title": "대문", "body": "'''감자위키'''에 오신 것을 환영합니다. 누구나 문서를 만들고 고칠 수 있는 공유 위키예요.\n\n== 시작하기 ==\n* 위의 검색창으로 문서를 찾아보세요.\n* 문서 쓰는 방법은 [[도움말]]에서 볼 수 있어요.\n* 처음 읽어볼 문서로 [[감자]]를 추천해요.\n* 아이돌 문서 모양은 [[예시 아이돌 그룹]]에서 볼 수 있어요.\n* 없는 문서는 붉은색 링크로 보여요. 눌러서 바로 만들 수 있어요.\n\n== 문서 목록 ==\n'새 문서' 버튼으로 만든 문서는 '최근 변경'에 가장 먼저 나타나요.", "updatedAt": 1794729600000}, {"title": "바다", "body": "[정보상자]\n제목 = 바다\n부제 = 영어 이름\n본명 = 입력\n생년월일 = 입력\n출신지 = 입력\n소속 그룹 = 입력\n포지션 = 입력\n[/정보상자]\n\n[목차]\n\n== 개요 ==\n이름과 소속 그룹을 한두 문장으로 소개해요.\n\n== 프로필 ==\n=== 기본 정보 ===\n=== 포지션과 실력 ===\n\n== 활동 ==\n=== 그룹 활동 ===\n=== 개인 활동 ===\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]", "updatedAt": 1794731000000}, {"title": "감자", "body": "'''감자'''는 가지과 식물로, 땅속줄기 끝이 부풀어 생긴 덩이줄기를 먹는 작물이에요. 원산지는 남아메리카 안데스 산지로 알려져 있고, 이후 여러 나라로 퍼져 주요 식량 작물이 되었어요.\n\n== 종류 ==\n* 러셋: 갈색 껍질에 길쭉한 모양이라 굽거나 튀기는 요리에 많이 써요.\n* 유콘 골드: 속살이 노랗고 맛이 고소해요.\n* 보라 감자: 껍질과 속살이 보랏빛을 띠어요.\n\n== 보관과 주의 ==\n햇빛이 들지 않는 서늘한 곳에 보관해요. 싹이 났거나 껍질이 초록색으로 변한 부분에는 솔라닌이 들어 있으니 도려내고, 많이 변했다면 먹지 않는 게 좋아요.\n\n== 같이 보기 ==\n* [[감자 요리]]\n* [[대문]]", "updatedAt": 1794729600000}, {"title": "예시 아이돌 그룹", "body": "[정보상자]\n제목 = Lumion\n부제 = 틀을 보여주기 위한 가상의 그룹\n데뷔일 = 2026년 1월 1일\n데뷔 음반 = 첫 번째 싱글\n장르 = 팝[* 이 문서의 내용은 모두 틀을 보여주려고 지어낸 예시예요. 실제 그룹이 아니에요.]\n소속사 = 예시엔터테인먼트\n[/정보상자]\n\n[배너 #aee57a]\n희원 · 조서연 · 바다  · 연우  · 이서연  · 지호\nDebut Single 예시\n[/배너]\n\n[목차]\n\n== 개요 ==\n'''예시 그룹'''은 위키 문서 틀을 보여주기 위해 만든 가상의 그룹이에요. 새 문서를 만들 때 편집 도구의 '아이돌 틀' 버튼을 누르면 이 문서와 같은 구성을 불러올 수 있어요.\n\n== 멤버 ==\n* 멤버1: 리더, 보컬\n* 멤버2: 댄스\n* 멤버3: 비주얼\n=== 멤버 간 케미 ===\n멤버끼리 잘 맞는 점을 적는 칸이에요.\n=== 멤버 간 이야기 ===\n연습생 시절 이야기 같은 내용을 적어요.\n\n== 특징 ==\n=== 그룹명 ===\n이름의 뜻을 적어요.\n=== 로고 ===\n로고 이미지는 '이미지 올리기' 버튼으로 넣을 수 있어요.\n=== 콘셉트 ===\n활동 콘셉트를 적어요.\n\n== 음반 ==\n* 첫 번째 싱글 (2026년 1월 1일)\n\n== 활동 ==\n=== 공연 및 행사 ===\n=== 음악 방송 직캠 ===\n\n== 수상 경력 ==\n아직 없어요.\n\n== 여담 ==\n[펼치기 접어 둔 내용 보기]\n접기 문법으로 긴 내용을 숨길 수 있어요.\n[/펼치기]\n\n== 둘러보기 ==\n* [[대문]]\n* [[도움말]]", "updatedAt": 1794730754356}, {"title": "희원", "body": "[정보상자]\n제목 = 희원\n부제 = 영어 이름\n본명 = 입력\n생년월일 = 입력\n출신지 = 입력\n소속 그룹 = 입력\n포지션 = 입력\n[/정보상자]\n\n[목차]\n\n== 개요 ==\n이름과 소속 그룹을 한두 문장으로 소개해요.\n\n== 프로필 ==\n=== 기본 정보 ===\n=== 포지션과 실력 ===\n\n== 활동 ==\n=== 그룹 활동 ===\n=== 개인 활동 ===\n\n== 여담 ==\n\n== 둘러보기 ==\n* [[대문]]", "updatedAt": 1794731000000}];
 draw();
+function capSel(e){
+  var pl=e.target.closest&&e.target.closest('.pickl'),tx=$('#eb');
+  if(pl&&tx)S.pick={mode:pl.dataset.mode,a:tx.selectionStart,b:tx.selectionEnd};
+}
+document.addEventListener('pointerdown',capSel,true);
+document.addEventListener('touchstart',capSel,{capture:true,passive:true});
+document.addEventListener('mousedown',capSel,true);
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){var o=$('#fnov');if(o)o.remove()}});
 window.addEventListener('scroll',function(){var u=$('#up');if(u)u.hidden=window.scrollY<400},{passive:true});
 function fromRow(r){return {title:r.title,body:String(r.body||''),updatedAt:Number(r.updated_at)||0}}
@@ -898,7 +899,7 @@ function uploadImage(file){
   });
 }
 document.addEventListener('change',function(e){
-  if(e.target.id==='cpk'&&S.pick){
+  if(e.target.classList&&e.target.classList.contains('cpk')&&S.pick){
     var tx1=$('#eb'),pc=S.pick,hex=e.target.value;
     if(!tx1)return;
     var sel=tx1.value.slice(pc.a,pc.b);
